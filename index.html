@@ -842,11 +842,11 @@
                     </div>
                 </div>
             </div>
+            <div id="user-notification-container" class="space-y-3"></div>
         </section>
 
         <!-- ================= HALAMAN INSPEKSI & AKSI CEPAT ================= -->
         <section id="izin-berkendara" class="hidden max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-            <div id="user-notification-container" class="space-y-3"></div>
             <div
                 class="bg-haleyora-card/90 border border-haleyora-blue/50 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-2xl space-y-8">
                 <!-- KOP SURAT UTAMA -->
@@ -1441,6 +1441,13 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                             <option value="SIBOLGA">SIBOLGA</option>
                             <option value="BUKITBARISAN">BUKIT BARISAN</option>
                         </select>
+                        <div
+                            class="flex bg-haleyora-dark border border-haleyora-blue/50 rounded-xl overflow-hidden text-xs font-bold">
+                            <button type="button" id="btn-mode-asli" onclick="gantiModeDataInspeksi('asli')"
+                                class="px-3.5 py-2.5 bg-haleyora-blue text-white transition">Data Asli</button>
+                            <button type="button" id="btn-mode-edit" onclick="gantiModeDataInspeksi('edit')"
+                                class="px-3.5 py-2.5 text-slate-300 transition">Data Sudah Diedit</button>
+                        </div>
                     </div>
                     <table class="w-full text-left text-xs text-slate-200 border-collapse">
                         <thead class="bg-haleyora-blue/40 text-white font-bold uppercase tracking-wider text-[11px]">
@@ -1736,6 +1743,46 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
 
     </div>
 
+    <!-- MODAL TOLAK / MINTA REVISI -->
+    <div id="modal-revisi"
+        class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div
+            class="bg-haleyora-card border border-haleyora-blue/40 rounded-3xl max-w-lg w-full p-6 space-y-4 text-slate-100 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-extrabold text-white">Tolak / Minta Revisi Laporan</h3>
+                <button onclick="closeModalRevisi()" class="text-slate-400 hover:text-white text-lg p-2"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <label class="flex items-center gap-2 text-xs text-slate-300">
+                <input type="checkbox" id="revisi-mode-permanen" class="w-4 h-4">
+                Tolak permanen (laporan ditutup, user tidak perlu mengubah apa pun)
+            </label>
+
+            <div>
+                <label class="text-[11px] text-slate-400 uppercase font-bold">Catatan untuk User</label>
+                <textarea id="revisi-catatan" rows="2" placeholder="Contoh: Perbaiki foto plat nomor dan item ban depan"
+                    class="w-full mt-1 bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-haleyora-orange"></textarea>
+            </div>
+
+            <div id="revisi-picker-wrapper">
+                <label class="text-[11px] text-slate-400 uppercase font-bold">Bagian yang Harus Diganti</label>
+                <input type="text" id="revisi-search" oninput="renderPilihanRevisi(this.value)"
+                    placeholder="Cari bagian... (opsional)"
+                    class="w-full mt-1 mb-2 bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-haleyora-orange">
+                <div id="rev-cb-list"
+                    class="border border-haleyora-blue/30 rounded-xl p-2 max-h-56 overflow-y-auto space-y-0.5"></div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-haleyora-blue/30">
+                <button onclick="closeModalRevisi()"
+                    class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl text-xs font-bold">Batal</button>
+                <button onclick="submitRevisiAdmin()"
+                    class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-bold">Kirim</button>
+            </div>
+        </div>
+    </div>
+
     <div id="profil-akun-modal"
         class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
         <div
@@ -1797,7 +1844,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 const fotoWajah = document.getElementById('pa-foto-wajah');
                 const avatarInisial = document.getElementById('pa-avatar-initial');
                 if (u.foto_wajah) {
-                    fotoWajah.src = pb.files.getUrl(u, u.foto_wajah);
+                    pasangFotoAman(fotoWajah, u, u.foto_wajah);
                     fotoWajah.classList.remove('hidden');
                     avatarInisial.classList.add('hidden');
                 } else {
@@ -1808,7 +1855,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 const fotoSim = document.getElementById('pa-foto-sim');
                 const fotoSimKosong = document.getElementById('pa-foto-sim-kosong');
                 if (u.foto_sim) {
-                    fotoSim.src = pb.files.getUrl(u, u.foto_sim);
+                    pasangFotoAman(fotoSim, u, u.foto_sim);
                     fotoSim.classList.remove('hidden');
                     fotoSimKosong.classList.add('hidden');
                 } else {
@@ -1933,7 +1980,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
         }
 
         async function urlKeBase64(url) {
-            const response = await fetch(url);
+            const response = await fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
             const blob = await response.blob();
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -2279,80 +2326,65 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
         async function loadKeFormRevisi(laporanId) {
             try {
                 const rekam = await pb.collection('laporan').getOne(laporanId);
-
                 isRevisiMode = true;
                 currentLaporanIdToEdit = laporanId;
-
-                // 1. Arahkan user ke halaman form
                 showSection('izin-berkendara');
+                document.getElementById('inspection-form').reset();
 
-                // 2. Kunci (Disable) SEMUA input, radio, dan tombol kamera secara default
-                const allInputs = document.querySelectorAll('#inspection-form input, #inspection-form button[onclick^="startCamera"], #inspection-form button[id^="btn-snap"]');
-                allInputs.forEach(el => {
-                    el.disabled = true;
-                    el.classList.add('opacity-50', 'cursor-not-allowed'); // Efek visual
+                // 1. Pra-isi form dengan data lama (WAJIB agar field yang tidak direvisi tidak kosong)
+                document.getElementById('input-nama-supir').value = rekam.supir || '';
+                document.getElementById('input-jenis-kendaraan').value = rekam.jenis_kendaraan || '';
+                document.getElementById('input-nopol').value = rekam.nopol || '';
+                document.getElementById('input-no-rangka').value = rekam.no_rangka || '';
+                document.getElementById('input-masa-stnk').value = rekam.masa_aktif_stnk || '';
+                document.getElementById('input-masa-kir').value = rekam.masa_aktif_kir || '';
+                document.getElementById('input-masa-sim').value = rekam.masa_aktif_sim || '';
+
+                const checklistLama = rekam.checklist || {};
+                allInspectionItems.forEach((namaItem, idx) => {
+                    const itemNo = idx + 1;
+                    const entry = checklistLama[namaItem];
+                    if (!entry) return;
+                    const radio = document.querySelector(`input[name="item_${itemNo}"][value="${entry.kondisi}"]`);
+                    if (radio) radio.checked = true;
+                    const ket = document.getElementById(`keterangan-item_${itemNo}`);
+                    if (ket) {
+                        ket.value = entry.keterangan || '';
+                        if (entry.kondisi === 'TIDAK BAIK') ket.classList.remove('hidden');
+                    }
                 });
 
-                // 3. Buka (Enable) HANYA bagian yang diperintahkan admin
-                // Format array contoh: ["input-nopol", "item_1", "stnk"]
+                // 2. Kunci SEMUA input (termasuk textarea keterangan)
+                const allInputs = document.querySelectorAll(
+                    '#inspection-form input, #inspection-form textarea, #inspection-form button[onclick^="startCamera"], #inspection-form button[id^="btn-snap"]'
+                );
+                allInputs.forEach(el => { el.disabled = true; el.classList.add('opacity-50', 'cursor-not-allowed'); });
+
+                // 3. Buka HANYA bagian yang diminta admin
                 const targetBuka = rekam.target_revisi || [];
-
                 targetBuka.forEach(fieldId => {
-                    // Membuka input text/radio
                     const inputField = document.getElementById(fieldId);
-                    if (inputField) {
-                        inputField.disabled = false;
-                        inputField.classList.remove('opacity-50', 'cursor-not-allowed');
-                    }
+                    if (inputField) { inputField.disabled = false; inputField.classList.remove('opacity-50', 'cursor-not-allowed'); }
 
-                    // Membuka radio button untuk item komponen khusus
-                    const itemRadios = document.querySelectorAll(`input[name="${fieldId}"]`);
-                    itemRadios.forEach(radio => {
-                        radio.disabled = false;
-                        radio.classList.remove('opacity-50', 'cursor-not-allowed');
+                    document.querySelectorAll(`input[name="${fieldId}"]`).forEach(radio => {
+                        radio.disabled = false; radio.classList.remove('opacity-50', 'cursor-not-allowed');
                     });
 
-                    // Membuka tombol kamera yang terkait dengan ID tersebut
+                    const ketField = document.getElementById(`keterangan-${fieldId}`);
+                    if (ketField) { ketField.disabled = false; ketField.classList.remove('opacity-50', 'cursor-not-allowed'); }
+
                     const cameraBtn = document.querySelector(`button[onclick="startCamera('${fieldId}')"]`);
-                    if (cameraBtn) {
-                        cameraBtn.disabled = false;
-                        cameraBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    }
+                    if (cameraBtn) { cameraBtn.disabled = false; cameraBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+
+                    const fileInput = document.getElementById(`file-${fieldId}`);
+                    if (fileInput) { fileInput.disabled = false; fileInput.classList.remove('opacity-50', 'cursor-not-allowed'); }
                 });
 
-                alert("Mode Revisi Aktif! Anda hanya dapat mengubah bagian yang disorot oleh admin.");
+                const daftarLabel = REVISI_FIELD_OPTIONS.filter(o => targetBuka.includes(o.id)).map(o => o.label).join(', ');
+                alert("Mode Revisi Aktif! Anda hanya dapat mengubah:\n\n" + (daftarLabel || '-'));
             } catch (error) {
                 console.error(error);
                 alert("Gagal memuat data revisi.");
-            }
-        }
-
-        async function perintahRevisiAdmin(laporanId) {
-            const catatan = prompt("Masukkan pesan untuk user (contoh: 'Perbaiki foto plat nomor dan item no 5'):");
-            if (!catatan) return;
-
-            // Simulasi: Mengumpulkan ID dari checkbox revisi yang dicentang admin di modal
-            // Pastikan kamu menambahkan class 'rev-checkbox' dan atribut value='id-input-terkait' di checkbox modal
-            const checkedBoxes = document.querySelectorAll('.rev-checkbox:checked');
-            const fieldRevisi = Array.from(checkedBoxes).map(cb => cb.value);
-
-            if (fieldRevisi.length === 0) {
-                alert("Pilih minimal satu bagian yang harus direvisi dengan mencentang checkbox!");
-                return;
-            }
-
-            try {
-                await pb.collection('laporan').update(laporanId, {
-                    status: 'revisi',
-                    catatan_admin: catatan,
-                    target_revisi: fieldRevisi // Disimpan sebagai JSON Array, misal: ["input-nopol", "item_5"]
-                });
-                alert('Perintah revisi dan target field berhasil dikirim ke user!');
-                closeDetailModal();
-                // loadPendingReports(); // Refresh tabel admin
-            } catch (error) {
-                console.error(error);
-                alert('Gagal mengirim status revisi.');
             }
         }
 
@@ -2368,6 +2400,22 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             };
             return { url, options };
         };
+
+        // Ambil URL file PocketBase dengan header anti-warning ngrok, lalu tempel ke elemen <img>
+        async function pasangFotoAman(imgElement, record, filename) {
+            if (!filename) return;
+            const url = pb.files.getUrl(record, filename);
+            try {
+                const res = await fetch(url, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const blob = await res.blob();
+                imgElement.src = URL.createObjectURL(blob);
+            } catch (err) {
+                console.error('Gagal memuat foto:', err);
+                imgElement.alt = 'Gagal memuat foto';
+            }
+        }
 
         // Variabel untuk melacak status mode form (apakah laporan baru atau revisi)
         let isRevisiMode = false;
@@ -2830,25 +2878,21 @@ rounded-xl font-bold transition">Batal</button>
             const profFotoSimKosong = document.getElementById('profile-foto-sim-kosong');
 
             if (currentUser.foto_wajah) {
-                const urlWajah = pb.files.getUrl(currentUser, currentUser.foto_wajah);
-                if (navFoto) { navFoto.src = urlWajah; navFoto.classList.remove('hidden'); }
+                if (navFoto) { pasangFotoAman(navFoto, currentUser, currentUser.foto_wajah); navFoto.classList.remove('hidden'); }
                 const navInisial = document.getElementById('nav-avatar-initial');
                 if (navInisial) navInisial.classList.add('hidden');
-                if (profFotoWajah) { profFotoWajah.src = urlWajah; profFotoWajah.classList.remove('hidden'); }
+                if (profFotoWajah) { pasangFotoAman(profFotoWajah, currentUser, currentUser.foto_wajah); profFotoWajah.classList.remove('hidden'); }
                 if (profAvatarInisial) profAvatarInisial.classList.add('hidden');
             }
-
             if (currentUser.foto_sim) {
-                const urlSim = pb.files.getUrl(currentUser, currentUser.foto_sim);
-                if (profFotoSim) { profFotoSim.src = urlSim; profFotoSim.classList.remove('hidden'); }
+                if (profFotoSim) { pasangFotoAman(profFotoSim, currentUser, currentUser.foto_sim); profFotoSim.classList.remove('hidden'); }
                 if (profFotoSimKosong) profFotoSimKosong.classList.add('hidden');
             }
-
             if (currentUser.role === 'admin' && currentUser.foto_wajah) {
                 const adminFoto = document.getElementById('admin-foto-wajah');
                 const adminInisial = document.getElementById('admin-avatar-initial');
                 if (adminFoto) {
-                    adminFoto.src = pb.files.getUrl(currentUser, currentUser.foto_wajah);
+                    pasangFotoAman(adminFoto, currentUser, currentUser.foto_wajah);
                     adminFoto.classList.remove('hidden');
                 }
                 if (adminInisial) adminInisial.classList.add('hidden');
@@ -3113,7 +3157,7 @@ rounded-xl font-bold transition">Batal</button>
           <td class="p-3 border-b
 border-haleyora-blue/20">${item.keterangan_kerusakan ||
                         '-'}</td>
-<td class="p-3 border-b border-haleyora-blue/20">${item.foto_servis ? `<img src="${pb.files.getUrl(item, item.foto_servis)}" class="w-14 h-14 object-cover rounded-lg">` : '-'}</td>
+<td class="p-3 border-b border-haleyora-blue/20">${item.foto_servis ? `<img id="foto-servis-${item.id}" class="w-14 h-14 object-cover rounded-lg">` : '-'}</td>
 <td class="p-3 border-b border-haleyora-blue/20">${item.status || 'pending'}</td>
             ${item.status === 'pending' ? `
               <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition mr-1"><i class="fa-solid fa-check"></i></button>
@@ -3235,7 +3279,7 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
           <td class="p-3 border-b border-haleyora-blue/20">${item.nopol || '-'}</td>
           <td class="p-3 border-b border-haleyora-blue/20">${item.lokasi_kejadian || '-'}</td>
           <td class="p-3 border-b border-haleyora-blue/20">${item.kronologi || '-'}</td>
-          <td class="p-3 border-b border-haleyora-blue/20">${fotoUrl ? `<img src="${fotoUrl}" class="w-14 h-14 object-cover rounded-lg">` : '-'}</td>
+          <td class="p-3 border-b border-haleyora-blue/20">${item.foto_kecelakaan ? `<img id="foto-kcl-${item.id}" class="w-14 h-14 object-cover rounded-lg">` : '-'}</td>
           <td class="p-3 border-b border-haleyora-blue/20">${item.status || 'pending'}</td>
           <td class="p-3 border-b border-haleyora-blue/20 text-center">
             ${item.status === 'pending' ? `
@@ -3245,10 +3289,31 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
           </td>
         </tr>`;
                 });
+                records.items.forEach(item => {
+                    if (item.foto_servis) {
+                        const el = document.getElementById(`foto-servis-${item.id}`);
+                        if (el) pasangFotoAman(el, item, item.foto_servis);
+                    }
+                });
+                records.items.forEach(item => {
+                    if (item.foto_kecelakaan) {
+                        const el = document.getElementById(`foto-kcl-${item.id}`);
+                        if (el) pasangFotoAman(el, item, item.foto_kecelakaan);
+                    }
+                });
             } catch (error) {
                 console.error("Gagal memuat data kecelakaan:", error);
                 tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-rose-400">Gagal memuat data kecelakaan.</td></tr>';
             }
+        }
+
+        let modeDataInspeksi = 'asli'; // 'asli' = koleksi laporan, 'edit' = koleksi edit1
+
+        function gantiModeDataInspeksi(mode) {
+            modeDataInspeksi = mode;
+            document.getElementById('btn-mode-asli').className = 'px-3.5 py-2.5 transition ' + (mode === 'asli' ? 'bg-haleyora-blue text-white' : 'text-slate-300');
+            document.getElementById('btn-mode-edit').className = 'px-3.5 py-2.5 transition ' + (mode === 'edit' ? 'bg-haleyora-blue text-white' : 'text-slate-300');
+            loadPendingReports();
         }
 
         /* 6. ADMIN DASHBOARD & VERIFIKASI */
@@ -3278,17 +3343,21 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
                     }
 
                     container.classList.remove('hidden');
-                    container.innerHTML = akunMatch.items.map(u => {
-                        const fotoUrl = u.foto_wajah ? pb.files.getUrl(u, u.foto_wajah) : '';
-                        return `
-    <div onclick="bukaProfilAkun('${u.id}')" class="flex items-center gap-3 p-3 rounded-xl bg-haleyora-dark/60 border border-haleyora-blue/30 cursor-pointer hover:border-haleyora-sky/60 transition">
-      ${fotoUrl ? `<img src="${fotoUrl}" class="w-10 h-10 rounded-full object-cover border border-haleyora-sky/50">` : `<div class="w-10 h-10 rounded-full bg-haleyora-sky/20 border border-haleyora-sky/50"></div>`}
-      <div>
-        <p class="text-xs font-bold text-white">${u.nama}</p>
-        <p class="text-[10px] text-slate-400">NIP: ${u.nip || '-'} • Data Akun</p>
-      </div>
-    </div>`;
-                    }).join('');
+                    container.innerHTML = akunMatch.items.map(u => `
+  <div onclick="bukaProfilAkun('${u.id}')" class="flex items-center gap-3 p-3 rounded-xl bg-haleyora-dark/60 border border-haleyora-blue/30 cursor-pointer hover:border-haleyora-sky/60 transition">
+    ${u.foto_wajah ? `<img id="foto-akun-${u.id}" class="w-10 h-10 rounded-full object-cover border border-haleyora-sky/50">` : `<div class="w-10 h-10 rounded-full bg-haleyora-sky/20 border border-haleyora-sky/50"></div>`}
+    <div>
+      <p class="text-xs font-bold text-white">${u.nama}</p>
+      <p class="text-[10px] text-slate-400">NIP: ${u.nip || '-'} • Data Akun</p>
+    </div>
+  </div>`).join('');
+
+                    akunMatch.items.forEach(u => {
+                        if (u.foto_wajah) {
+                            const el = document.getElementById(`foto-akun-${u.id}`);
+                            if (el) pasangFotoAman(el, u, u.foto_wajah);
+                        }
+                    });
                 } catch (error) {
                     console.error("Gagal mencari data akun:", error);
                 }
@@ -3310,19 +3379,13 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
                     filterParts.push(`user_id.lokasi_kerja = "${lokasi}"`);
                 }
 
-                const records = await pb.collection('laporan').getList(1, 50, {
-                    expand: 'user_id',
-                    sort: '-created',
-                    filter: filterParts.join(' && '),
-                    requestKey: null
+                const namaKoleksi = modeDataInspeksi === 'edit' ? 'edit1' : 'laporan';
+                const records = await pb.collection(namaKoleksi).getList(1, 50, {
+                    expand: 'user_id', sort: '-created', filter: filterParts.join(' && '), requestKey: null
                 });
 
                 const tbody = document.getElementById('verifikasi-table-body');
-                if (!tbody) {
-                    console.error("Elemen tabel tidak ditemukan!");
-                    return;
-                }
-
+                if (!tbody) { console.error("Elemen tabel tidak ditemukan!"); return; }
                 tbody.innerHTML = '';
 
                 if (records.items.length === 0) {
@@ -3330,38 +3393,73 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
                     return;
                 }
 
-                records.items.forEach((item) => {
+                function buatBarisLaporan(item) {
                     const namaUser = item.expand?.user_id?.nama || item.supir || 'Nama Tidak Ditemukan';
                     const nopol = item.nopol || '-';
                     const kategori = item.kategori || 'Inspeksi Kendaraan';
                     const waktu = new Date(item.created).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
-
                     let statusBadge = 'bg-haleyora-orange/20 text-haleyora-orange border border-haleyora-orange/30';
                     if (item.status === 'selesai') statusBadge = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
                     if (item.status === 'revisi') statusBadge = 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
-
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-haleyora-blue/10 transition';
                     tr.innerHTML = `
-        <td class="p-3 border-b border-haleyora-blue/20 text-slate-300 align-middle">${waktu}</td>
-        <td class="p-3 border-b border-haleyora-blue/20 text-white font-semibold align-middle">${kategori}</td>
-        <td class="p-3 border-b border-haleyora-blue/20 text-slate-300 align-middle">${namaUser}</td>
-        <td class="p-3 border-b border-haleyora-blue/20 text-haleyora-sky font-bold align-middle">${nopol}</td>
-        <td class="p-3 border-b border-haleyora-blue/20 align-middle">
-          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBadge}">${item.status || 'pending'}</span>
-        </td>
-        <td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
-          <div class="flex items-center justify-center gap-2">
-            <button onclick="bukaModalDetail('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button>
-${item.status === 'pending' ? `
+    <td class="p-3 border-b border-haleyora-blue/20 text-slate-300 align-middle">${waktu}</td>
+    <td class="p-3 border-b border-haleyora-blue/20 text-white font-semibold align-middle">${kategori}</td>
+    <td class="p-3 border-b border-haleyora-blue/20 text-slate-300 align-middle">${namaUser}</td>
+    <td class="p-3 border-b border-haleyora-blue/20 text-haleyora-sky font-bold align-middle">${nopol}</td>
+    <td class="p-3 border-b border-haleyora-blue/20 align-middle">
+      <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusBadge}">${item.status || 'pending'}</span>
+    </td>
+    <td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
+      <div class="flex items-center justify-center gap-2">
+        <button onclick="bukaModalDetail('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button>
+        ${modeDataInspeksi === 'asli' && item.status === 'pending' ? `
   <button onclick="updateReportStatus('${item.id}', 'selesai')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
-  <button onclick="tolakLaporan('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
+  <button onclick="bukaModalRevisi('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
 ` : ''}
-          </div>
-        </td>
-      `;
-                    tbody.appendChild(tr);
-                });
+${modeDataInspeksi === 'edit' && item.status_edit === 'menunggu_verifikasi' ? `
+  <button onclick="terimaEditRevisi('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i> Terima</button>
+` : ''}
+${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menunggu_verifikasi' ? `
+  <span class="text-[10px] text-slate-400 italic">${item.status_edit}</span>
+` : ''}
+      </div>
+    </td>`;
+                    return tr;
+                }
+
+                function baris2Header(teks) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="6" class="pt-4 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-haleyora-sky">${teks}</td>`;
+                    return tr;
+                }
+
+                if (nopolKeyword) {
+                    // Kelompokkan hasil pencarian nopol jadi "Hari Ini" & "Kemarin"
+                    const now = new Date();
+                    const awalHariIni = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const awalKemarin = new Date(awalHariIni); awalKemarin.setDate(awalKemarin.getDate() - 1);
+
+                    const hariIni = records.items.filter(it => new Date(it.created) >= awalHariIni);
+                    const kemarin = records.items.filter(it => new Date(it.created) >= awalKemarin && new Date(it.created) < awalHariIni);
+                    const lainnya = records.items.filter(it => new Date(it.created) < awalKemarin);
+
+                    if (hariIni.length) {
+                        tbody.appendChild(baris2Header(`Data Hari Ini (${hariIni.length})`));
+                        hariIni.forEach(it => tbody.appendChild(buatBarisLaporan(it)));
+                    }
+                    if (kemarin.length) {
+                        tbody.appendChild(baris2Header(`Data Kemarin (${kemarin.length})`));
+                        kemarin.forEach(it => tbody.appendChild(buatBarisLaporan(it)));
+                    }
+                    if (lainnya.length) {
+                        tbody.appendChild(baris2Header(`Data Sebelumnya (${lainnya.length})`));
+                        lainnya.forEach(it => tbody.appendChild(buatBarisLaporan(it)));
+                    }
+                } else {
+                    records.items.forEach(item => tbody.appendChild(buatBarisLaporan(item)));
+                }
             } catch (error) {
                 console.error("Gagal mengambil data laporan dari PocketBase:", error);
                 const tbody = document.getElementById('verifikasi-table-body');
@@ -3440,6 +3538,42 @@ ${item.status === 'pending' ? `
             if (btnTidakBaik) btnTidakBaik.className = nilai === 'Tidak Baik' ? gayaTidakBaikAktif : gayaNonaktif;
         }
 
+        async function terimaEditRevisi(edit1Id) {
+            if (!confirm('Terima data revisi ini dan gabungkan ke laporan asli?')) return;
+            try {
+                const edit = await pb.collection('edit1').getOne(edit1Id);
+                const dataUpdate = { status: 'selesai', catatan_admin: '', target_revisi: [] };
+
+                ['supir', 'jenis_kendaraan', 'nopol', 'no_rangka', 'masa_aktif_stnk', 'masa_aktif_kir', 'masa_aktif_sim'].forEach(f => {
+                    if (edit[f]) dataUpdate[f] = edit[f];
+                });
+                if (edit.checklist) dataUpdate.checklist = edit.checklist;
+
+                await pb.collection('laporan').update(edit.laporan_asli_id, dataUpdate);
+
+                // Salin foto baru (kalau user upload ulang foto tertentu saat revisi)
+                const fieldFoto = ['foto_depan', 'foto_belakang', 'foto_kanan', 'foto_kiri', 'foto_stnk', 'foto_kir', 'foto_sim'];
+                for (const f of fieldFoto) {
+                    if (edit[f]) {
+                        const urlLama = pb.files.getUrl(edit, edit[f]);
+                        const resFoto = await fetch(urlLama, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                        const blob = await resFoto.blob();
+                        const fd = new FormData();
+                        fd.append(f, blob, edit[f]);
+                        await pb.collection('laporan').update(edit.laporan_asli_id, fd);
+                    }
+                }
+
+                await pb.collection('edit1').update(edit1Id, { status_edit: 'diterima' });
+                alert('Data revisi diterima & digabungkan ke laporan asli.');
+                loadPendingReports();
+                updateAdminStats();
+            } catch (error) {
+                console.error(error);
+                alert('Gagal menerima data revisi.');
+            }
+        }
+
         async function updateReportStatus(laporanId, newStatus) {
             try {
                 await pb.collection('laporan').update(laporanId, { status: newStatus });
@@ -3452,17 +3586,87 @@ ${item.status === 'pending' ? `
             }
         }
 
-        async function tolakLaporan(laporanId) {
-            const alasan = prompt('Masukkan alasan penolakan laporan ini (akan dikirim ke user):');
-            if (alasan === null) return; // admin batal
+        // Daftar semua bagian laporan yang bisa dipilih untuk direvisi
+        const REVISI_FIELD_OPTIONS = [
+            { id: 'input-nama-supir', label: 'Nama Supir' },
+            { id: 'input-jenis-kendaraan', label: 'Jenis Kendaraan' },
+            { id: 'input-nopol', label: 'Nomor Polisi' },
+            { id: 'input-no-rangka', label: 'Nomor Rangka' },
+            { id: 'input-masa-stnk', label: 'Masa Aktif STNK' },
+            { id: 'input-masa-kir', label: 'Masa Aktif KIR' },
+            { id: 'input-masa-sim', label: 'Masa Aktif SIM' },
+            { id: 'depan', label: 'Foto Depan' },
+            { id: 'belakang', label: 'Foto Belakang' },
+            { id: 'kanan', label: 'Foto Kanan' },
+            { id: 'kiri', label: 'Foto Kiri' },
+            { id: 'stnk', label: 'Foto STNK' },
+            { id: 'kir', label: 'Foto KIR' },
+            { id: 'sim', label: 'Foto SIM' },
+            ...allInspectionItems.map((item, idx) => ({ id: `item_${idx + 1}`, label: `${idx + 1}. ${item}` }))
+        ];
+
+        let laporanIdUntukRevisi = null;
+
+        function bukaModalRevisi(laporanId) {
+            laporanIdUntukRevisi = laporanId;
+            document.getElementById('revisi-catatan').value = '';
+            document.getElementById('revisi-search').value = '';
+            document.getElementById('revisi-mode-permanen').checked = false;
+            document.getElementById('revisi-picker-wrapper').classList.remove('hidden');
+            renderPilihanRevisi('');
+            document.getElementById('modal-revisi').classList.remove('hidden');
+        }
+
+        function closeModalRevisi() {
+            document.getElementById('modal-revisi').classList.add('hidden');
+            laporanIdUntukRevisi = null;
+        }
+
+        function renderPilihanRevisi(keyword) {
+            const wrap = document.getElementById('rev-cb-list');
+            const kw = keyword.trim().toLowerCase();
+            const opsi = REVISI_FIELD_OPTIONS.filter(o => !kw || o.label.toLowerCase().includes(kw));
+            wrap.innerHTML = opsi.map(o => `
+    <label class="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-haleyora-blue/10 cursor-pointer text-xs text-slate-200">
+      <input type="checkbox" class="rev-checkbox w-4 h-4" value="${o.id}">
+      <span>${o.label}</span>
+    </label>`).join('') || '<p class="text-xs text-slate-500 p-2">Tidak ada bagian yang cocok.</p>';
+        }
+
+        // Toggle: kalau "tolak permanen" dicentang, sembunyikan pemilih bagian (tidak relevan)
+        document.addEventListener('change', (e) => {
+            if (e.target && e.target.id === 'revisi-mode-permanen') {
+                document.getElementById('revisi-picker-wrapper').classList.toggle('hidden', e.target.checked);
+            }
+        });
+
+        async function submitRevisiAdmin() {
+            const catatan = document.getElementById('revisi-catatan').value.trim();
+            const modePermanen = document.getElementById('revisi-mode-permanen').checked;
+            if (!catatan) { alert('Mohon isi catatan/alasan untuk user.'); return; }
+
             try {
-                await pb.collection('laporan').update(laporanId, { status: 'ditolak', catatan_admin: alasan || 'Ditolak oleh admin.' });
-                alert('Laporan berhasil ditolak.');
+                if (modePermanen) {
+                    await pb.collection('laporan').update(laporanIdUntukRevisi, {
+                        status: 'ditolak', catatan_admin: catatan, target_revisi: []
+                    });
+                    alert('Laporan berhasil ditolak permanen.');
+                } else {
+                    const checkedBoxes = document.querySelectorAll('#rev-cb-list .rev-checkbox:checked');
+                    const fieldRevisi = Array.from(checkedBoxes).map(cb => cb.value);
+                    if (fieldRevisi.length === 0) { alert('Pilih minimal satu bagian yang harus direvisi.'); return; }
+                    await pb.collection('laporan').update(laporanIdUntukRevisi, {
+                        status: 'revisi', catatan_admin: catatan, target_revisi: fieldRevisi
+                    });
+                    alert('Permintaan revisi berhasil dikirim ke user.');
+                }
+                closeModalRevisi();
+                closeDetailModal();
                 loadPendingReports();
                 updateAdminStats();
             } catch (error) {
-                console.error("Gagal menolak laporan:", error);
-                alert('Gagal menolak laporan.');
+                console.error(error);
+                alert('Gagal mengirim revisi/penolakan.');
             }
         }
 
@@ -3524,9 +3728,13 @@ ${item.status === 'pending' ? `
                     const url = pb.files.getUrl(r, filename);
                     photosContainer.innerHTML += `
         <div class="p-2.5 rounded-xl bg-haleyora-dark/80 border border-haleyora-blue/30 text-center space-y-1.5">
-          <img src="${url}" class="w-full h-14 sm:h-16 object-contain rounded-lg border border-slate-700 bg-black/50">
-          <span class="text-[11px] text-slate-200 font-bold uppercase block">${label}</span>
-        </div>`;
+    <img id="${imgId}" class="w-full h-14 sm:h-16 object-contain rounded-lg border border-slate-700 bg-black/50">
+    <span class="text-[11px] text-slate-200 font-bold uppercase block">${label}</span>
+  </div>`;
+                    setTimeout(() => {
+                        const el = document.getElementById(imgId);
+                        if (el) pasangFotoAman(el, r, filename);
+                    }, 0);
                 });
                 if (!adaFoto) {
                     photosContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-3">Tidak ada foto terlampir.</p>`;
@@ -3612,64 +3820,6 @@ ${item.status === 'pending' ? `
 
             // 6. Beri notifikasi kepada pengguna
             alert("Anda telah berhasil keluar dari sistem.");
-        }
-
-
-        // Urutan tab untuk menentukan arah animasi
-        const tabsOrder = ['inspeksi', 'servis', 'kecelakaan', 'rekap'];
-        let currentTabIndex = 0; // Default di Inspeksi
-
-        function gantiTabAdmin(tabName) {
-            const newIndex = tabsOrder.indexOf(tabName);
-            if (newIndex === currentTabIndex) return; // Jika klik tab yang sama, abaikan
-
-            // Menentukan arah animasi berdasarkan permintaan Anda:
-            // Jika maju (ke servis, kecelakaan, rekap) -> dari kiri ke kanan
-            // Jika mundur -> dari kanan ke kiri
-            const isForward = newIndex > currentTabIndex;
-            const animationClass = isForward ? 'slide-in-left' : 'slide-in-right';
-
-            currentTabIndex = newIndex;
-
-            // 1. Sembunyikan semua tabel dan reset tombol tab
-            tabsOrder.forEach(tab => {
-                const wrapper = document.getElementById(`wrapper-tabel-${tab}`);
-                const btn = document.getElementById(`tab-${tab}`);
-
-                if (wrapper) {
-                    wrapper.classList.add('hidden');
-                    // Hapus animasi sebelumnya agar bisa di-trigger ulang nanti
-                    wrapper.classList.remove('slide-in-left', 'slide-in-right');
-                }
-
-                // Reset warna tombol ke non-aktif
-                if (btn) {
-                    btn.classList.remove('bg-haleyora-blue', 'text-white', 'border-transparent');
-                    btn.classList.add('bg-haleyora-dark', 'text-slate-300', 'border-haleyora-blue/40');
-                }
-            });
-
-            // 2. Tampilkan target wrapper dan tambahkan kelas animasinya
-            const targetWrapper = document.getElementById(`wrapper-tabel-${tabName}`);
-            if (targetWrapper) {
-                targetWrapper.classList.remove('hidden');
-                // Trigger reflow agar animasi bisa diulang walau class yang sama ditambahkan
-                void targetWrapper.offsetWidth;
-                targetWrapper.classList.add(animationClass);
-            }
-
-            // 3. Ubah warna tombol yang sedang aktif
-            const activeBtn = document.getElementById(`tab-${tabName}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('bg-haleyora-dark', 'text-slate-300', 'border-haleyora-blue/40');
-                activeBtn.classList.add('bg-haleyora-blue', 'text-white', 'border-transparent');
-            }
-
-            // 4. Panggil fungsi untuk mengambil data PocketBase masing-masing
-            if (tabName === 'inspeksi') loadPendingReports();
-            if (tabName === 'rekap') loadRekapBulanan();
-            // if (tabName === 'servis') loadDataServis(); // Aktifkan jika fungsi ini sudah Anda buat
-            // if (tabName === 'kecelakaan') loadDataKecelakaan(); // Aktifkan jika fungsi ini sudah Anda buat
         }
     </script>
 </body>
