@@ -58,7 +58,6 @@
 
         .text-gradient-orange {
             background: linear-gradient(135deg, #FF7A2F 0%, #F26A21 100%);
-            -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -1811,6 +1810,10 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 <img id="pa-foto-sim" class="w-full max-w-xs rounded-lg border border-haleyora-blue/30 hidden">
                 <p id="pa-foto-sim-kosong" class="text-xs text-slate-500">Belum ada foto SIM tersimpan.</p>
             </div>
+            <div class="space-y-2">
+                <span class="text-[10px] text-slate-400 uppercase tracking-wider">Riwayat Laporan Inspeksi</span>
+                <div id="pa-riwayat-laporan" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            </div>
         </div>
     </div>
     <!-- Overlay Transisi Cairan & Card Reveal -->
@@ -1861,6 +1864,40 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 } else {
                     fotoSim.classList.add('hidden');
                     fotoSimKosong.classList.remove('hidden');
+                }
+
+                // Ambil riwayat laporan inspeksi milik supir ini
+                const riwayatWrap = document.getElementById('pa-riwayat-laporan');
+                riwayatWrap.innerHTML = '<p class="text-xs text-slate-500">Memuat riwayat...</p>';
+                try {
+                    const riwayat = await pb.collection('laporan').getList(1, 20, {
+                        filter: `user_id = "${userId}"`,
+                        sort: '-created',
+                        requestKey: null
+                    });
+                    if (riwayat.items.length === 0) {
+                        riwayatWrap.innerHTML = '<p class="text-xs text-slate-500">Belum ada laporan yang pernah dikirim.</p>';
+                    } else {
+                        riwayatWrap.innerHTML = riwayat.items.map(rw => {
+                            let warna = 'bg-haleyora-orange/20 text-haleyora-orange border-haleyora-orange/30';
+                            if (rw.status === 'selesai') warna = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+                            if (rw.status === 'ditolak') warna = 'bg-rose-500/20 text-rose-400 border-rose-500/30';
+                            if (rw.status === 'revisi' || rw.status === 'pending_revisi') warna = 'bg-haleyora-sky/20 text-haleyora-sky border-haleyora-sky/30';
+                            const tanggal = new Date(rw.created).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                            return `
+        <div onclick="document.getElementById('profil-akun-modal').classList.add('hidden'); bukaModalDetail('${rw.id}', 'asli')"
+             class="flex items-center justify-between p-2.5 rounded-lg bg-haleyora-dark/50 border border-haleyora-blue/20 cursor-pointer hover:border-haleyora-sky/50 transition">
+          <div>
+            <p class="text-xs font-bold text-white">${rw.nopol || '-'}</p>
+            <p class="text-[10px] text-slate-400">${tanggal}</p>
+          </div>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${warna}">${rw.status || 'pending'}</span>
+        </div>`;
+                        }).join('');
+                    }
+                } catch (error) {
+                    console.error('Gagal memuat riwayat laporan:', error);
+                    riwayatWrap.innerHTML = '<p class="text-xs text-rose-400">Gagal memuat riwayat.</p>';
                 }
 
                 document.getElementById('profil-akun-modal').classList.remove('hidden');
@@ -2280,7 +2317,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             try {
                 // Cari laporan milik user yang statusnya disuruh revisi oleh admin
                 const records = await pb.collection('laporan').getFullList({
-                    filter: `user_id = "${currentUser.id}" && (status = "revisi" || status = "selesai" || status = "ditolak" || status = "pending_revisi")`,
+                    filter: `user_id = "${currentUser.id}" && notif_dibaca = false && (status = "revisi" || status = "selesai" || status = "ditolak" || status = "pending_revisi")`,
                 });
 
                 const notifContainer = document.getElementById('user-notification-container');
@@ -2310,23 +2347,39 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
     </div>`;
                     } else if (rekam.status === 'selesai') {
                         notifHTML = `
-      <div class="bg-emerald-500/20 border border-emerald-500/50 p-4 rounded-xl text-sm">
+    <div class="bg-emerald-500/20 border border-emerald-500/50 p-4 rounded-xl flex justify-between items-center text-sm gap-3">
+      <div>
         <strong class="text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Laporan Diterima</strong>
         <p class="text-white mt-1">Laporan kendaraan ${rekam.nopol} telah diverifikasi dan diterima oleh admin.</p>
-      </div>`;
+      </div>
+      <button type="button" onclick="tandaiNotifDibaca('${rekam.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold shrink-0">Mengerti</button>
+    </div>`;
                     } else if (rekam.status === 'ditolak') {
                         notifHTML = `
-      <div class="bg-rose-500/20 border border-rose-500/50 p-4 rounded-xl text-sm">
+    <div class="bg-rose-500/20 border border-rose-500/50 p-4 rounded-xl flex justify-between items-center text-sm gap-3">
+      <div>
         <strong class="text-rose-400"><i class="fa-solid fa-circle-xmark mr-1"></i> Laporan Ditolak</strong>
         <p class="text-white mt-1">Laporan kendaraan ${rekam.nopol} ditolak oleh admin.<br/>
         <span class="text-rose-300">Alasan: "${rekam.catatan_admin || '-'}"</span></p>
-      </div>`;
+      </div>
+      <button type="button" onclick="tandaiNotifDibaca('${rekam.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-bold shrink-0">Mengerti</button>
+    </div>`;
                     }
 
                     notifContainer.innerHTML += notifHTML;
                 });
             } catch (error) {
                 console.error("Gagal mengecek notifikasi revisi:", error);
+            }
+        }
+
+        async function tandaiNotifDibaca(laporanId) {
+            try {
+                await pb.collection('laporan').update(laporanId, { notif_dibaca: true });
+                cekStatusRevisiUser();
+            } catch (error) {
+                console.error(error);
+                alert('Gagal menandai notifikasi.');
             }
         }
 
@@ -2789,11 +2842,8 @@ rounded-xl font-bold transition">Batal</button>
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function handleFormInspectionSubmit(e) {
+        async function handleKecelakaanSubmit(e) {
             e.preventDefault();
-            const tombolKirim = document.getElementById('btn-kirim-inspeksi');
-            if (tombolKirim) tombolKirim.disabled = true;   // BARU: cegah klik ganda
-
             const formData = new FormData();
             formData.append('supir', document.getElementById('acc-supir').value);
             formData.append('nopol', document.getElementById('acc-nopol').value);
@@ -3442,13 +3492,14 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
     </td>
     <td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
       <div class="flex items-center justify-center gap-2">
-        <button onclick="bukaModalDetail('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button><button onclick="bukaModalDetail('${item.id}', '${modeDataInspeksi}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button>
+        <button onclick="bukaModalDetail('${item.id}', '${modeDataInspeksi}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button>
         ${modeDataInspeksi === 'asli' && item.status === 'pending' ? `
   <button onclick="updateReportStatus('${item.id}', 'selesai')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
   <button onclick="bukaModalRevisi('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
 ` : ''}
 ${modeDataInspeksi === 'edit' && item.status_edit === 'menunggu_verifikasi' ? `
   <button onclick="terimaEditRevisi('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i> Terima</button>
+  <button onclick="tolakEditRevisi('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
 ` : ''}
 ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menunggu_verifikasi' ? `
   <span class="text-[10px] text-slate-400 italic">${item.status_edit}</span>
@@ -3567,11 +3618,24 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             if (btnTidakBaik) btnTidakBaik.className = nilai === 'Tidak Baik' ? gayaTidakBaikAktif : gayaNonaktif;
         }
 
+        async function tolakEditRevisi(edit1Id) {
+            if (!confirm('Tolak data revisi ini? User akan diminta memperbaiki lagi.')) return;
+            try {
+                const edit = await pb.collection('edit1').getOne(edit1Id);
+                await pb.collection('edit1').update(edit1Id, { status_edit: 'ditolak' });
+                loadPendingReports();
+                bukaModalRevisi(edit.laporan_asli_id); // buka lagi form pilih bagian yang harus diperbaiki
+            } catch (error) {
+                console.error(error);
+                alert('Gagal menolak data revisi.');
+            }
+        }
+
         async function terimaEditRevisi(edit1Id) {
             if (!confirm('Terima data revisi ini dan gabungkan ke laporan asli?')) return;
             try {
                 const edit = await pb.collection('edit1').getOne(edit1Id);
-                const dataUpdate = { status: 'selesai', catatan_admin: '', target_revisi: [] };
+                const dataUpdate = { status: 'selesai', catatan_admin: '', target_revisi: [], notif_dibaca: false };
 
                 ['supir', 'jenis_kendaraan', 'nopol', 'no_rangka', 'masa_aktif_stnk', 'masa_aktif_kir', 'masa_aktif_sim'].forEach(f => {
                     if (edit[f]) dataUpdate[f] = edit[f];
@@ -3605,7 +3669,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
         async function updateReportStatus(laporanId, newStatus) {
             try {
-                await pb.collection('laporan').update(laporanId, { status: newStatus });
+                await pb.collection('laporan').update(laporanId, { status: newStatus, notif_dibaca: false });
                 alert(`Status laporan berhasil diubah menjadi "${newStatus}"`);
                 loadPendingReports();
                 updateAdminStats();
