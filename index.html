@@ -2376,8 +2376,28 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     const cameraBtn = document.querySelector(`button[onclick="startCamera('${fieldId}')"]`);
                     if (cameraBtn) { cameraBtn.disabled = false; cameraBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
 
+                    // BARU: buka juga kunci tombol "Ambil Foto"
+                    const snapBtn = document.getElementById(`btn-snap-${fieldId}`);
+                    if (snapBtn) { snapBtn.disabled = false; snapBtn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+
                     const fileInput = document.getElementById(`file-${fieldId}`);
                     if (fileInput) { fileInput.disabled = false; fileInput.classList.remove('opacity-50', 'cursor-not-allowed'); }
+                });
+
+                // BARU: tampilkan foto LAMA (read-only) untuk semua field foto yang TIDAK sedang direvisi,
+                // supaya user tetap bisa melihat seluruh isi laporan lamanya secara utuh.
+                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
+                daftarFotoId.forEach(fotoId => {
+                    const namaFieldFoto = `foto_${fotoId}`;
+                    if (!targetBuka.includes(fotoId) && rekam[namaFieldFoto]) {
+                        const previewEl = document.getElementById(`preview-${fotoId}`);
+                        const textEl = document.getElementById(`text-${fotoId}`);
+                        if (previewEl) {
+                            pasangFotoAman(previewEl, rekam, rekam[namaFieldFoto]);
+                            previewEl.classList.remove('hidden');
+                        }
+                        if (textEl) textEl.classList.add('hidden');
+                    }
                 });
 
                 const daftarLabel = REVISI_FIELD_OPTIONS.filter(o => targetBuka.includes(o.id)).map(o => o.label).join(', ');
@@ -3822,6 +3842,19 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             // 6. Beri notifikasi kepada pengguna
             alert("Anda telah berhasil keluar dari sistem.");
         }
+
+        // Pindahkan tombol aksi modal detail supaya berada di LUAR area kertas putih (export PDF)
+        document.addEventListener('DOMContentLoaded', () => {
+            const kertasPutih = document.getElementById('modal-export-content');
+            const tombolAksi = document.querySelector('#detail-modal .flex.flex-wrap.items-center.justify-end.gap-3');
+            if (kertasPutih && tombolAksi && kertasPutih.contains(tombolAksi)) {
+                kertasPutih.after(tombolAksi); // taruh tepat setelah kertas putih, masih di dalam modal
+                tombolAksi.classList.add(
+                    'bg-haleyora-dark/60', 'rounded-2xl', 'px-4', 'py-3',
+                    'border', 'border-haleyora-blue/30', 'mt-2'
+                );
+            }
+        });
     </script>
 </body>
 
