@@ -784,7 +784,7 @@
                                 </label>
                                 <a href="#" class="text-haleyora-orange hover:underline">Lupa password?</a>
                             </div>
-                            <button type="submit"
+                            <button type="submit" id="btn-kirim-inspeksi"
                                 class="w-full bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-haleyora-orange/25 active:scale-95">
                                 Masuk
                             </button>
@@ -2280,7 +2280,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             try {
                 // Cari laporan milik user yang statusnya disuruh revisi oleh admin
                 const records = await pb.collection('laporan').getFullList({
-                    filter: `user_id = "${currentUser.id}" && (status = "revisi" || status = "selesai" || status = "ditolak")`,
+                    filter: `user_id = "${currentUser.id}" && (status = "revisi" || status = "selesai" || status = "ditolak" || status = "pending_revisi")`,
                 });
 
                 const notifContainer = document.getElementById('user-notification-container');
@@ -2301,6 +2301,13 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
           Perbaiki Sekarang
         </button>
       </div>`;
+                    }
+                    else if (rekam.status === 'pending_revisi') {
+                        notifHTML = `
+    <div class="bg-haleyora-blue/20 border border-haleyora-sky/50 p-4 rounded-xl text-sm">
+      <strong class="text-haleyora-sky"><i class="fa-solid fa-clock mr-1"></i> Menunggu Verifikasi</strong>
+      <p class="text-white mt-1">Revisi laporan kendaraan ${rekam.nopol} sudah Anda kirim dan sedang menunggu diperiksa admin.</p>
+    </div>`;
                     } else if (rekam.status === 'selesai') {
                         notifHTML = `
       <div class="bg-emerald-500/20 border border-emerald-500/50 p-4 rounded-xl text-sm">
@@ -2782,8 +2789,10 @@ rounded-xl font-bold transition">Batal</button>
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function handleKecelakaanSubmit(e) {
+        async function handleFormInspectionSubmit(e) {
             e.preventDefault();
+            const tombolKirim = document.getElementById('btn-kirim-inspeksi');
+            if (tombolKirim) tombolKirim.disabled = true;   // BARU: cegah klik ganda
 
             const formData = new FormData();
             formData.append('supir', document.getElementById('acc-supir').value);
@@ -3115,10 +3124,8 @@ rounded-xl font-bold transition">Batal</button>
                 if (isRevisiMode) {
                     formData.append('laporan_asli_id', currentLaporanIdToEdit);
                     formData.append('status_edit', 'menunggu_verifikasi');
-                    await pb.collection('edit1').create(formData);
-
-                    await pb.collection('laporan').update(currentLaporanIdToEdit, { status: 'pending_revisi' });
-
+                    await pb.collection('edit1').create(formData, { requestKey: null });
+                    await pb.collection('laporan').update(currentLaporanIdToEdit, { status: 'pending_revisi' }, { requestKey: null });
                     alert("Data revisi berhasil dikirim ke Admin!");
                     isRevisiMode = false;
                     currentLaporanIdToEdit = null;
@@ -3139,6 +3146,8 @@ rounded-xl font-bold transition">Batal</button>
                     .join('\n');
                 console.error("Detail lengkap:", errData);
                 alert("Gagal mengirim laporan. Field bermasalah:\n\n" + (pesanField || error?.message || 'Error tidak diketahui.'));
+            } finally {
+                if (tombolKirim) tombolKirim.disabled = false;   // BARU: aktifkan lagi tombolnya
             }
         }
 
@@ -3433,7 +3442,7 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
     </td>
     <td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
       <div class="flex items-center justify-center gap-2">
-        <button onclick="bukaModalDetail('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button>
+        <button onclick="bukaModalDetail('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button><button onclick="bukaModalDetail('${item.id}', '${modeDataInspeksi}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button>
         ${modeDataInspeksi === 'asli' && item.status === 'pending' ? `
   <button onclick="updateReportStatus('${item.id}', 'selesai')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
   <button onclick="bukaModalRevisi('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
@@ -3715,9 +3724,10 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
         /* 8. MODAL DETAIL & EXPORT DATA (terhubung ke PocketBase) */
         let currentModalRecordId = null;
 
-        async function bukaModalDetail(laporanId) {
+        async function bukaModalDetail(laporanId, sumberData = 'asli') {
             try {
-                const r = await pb.collection('laporan').getOne(laporanId, { expand: 'user_id' });
+                const namaKoleksiDetail = sumberData === 'edit' ? 'edit1' : 'laporan';
+                const r = await pb.collection(namaKoleksiDetail).getOne(laporanId, { expand: 'user_id' });
                 currentModalRecordId = r.id;
                 tandaiKondisiAktif(r.kondisi_kendaraan || '');
 
