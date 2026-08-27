@@ -3498,7 +3498,7 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
   <button onclick="updateReportStatus('${item.id}', 'selesai')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
   <button onclick="bukaModalRevisi('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
 ` : ''}
-${modeDataInspeksi === 'edit' && item.status_edit === 'menunggu_verifikasi' ? `
+${modeDataInspeksi === 'edit' && (!item.status_edit || item.status_edit === 'menunggu_verifikasi') ? `
   <button onclick="terimaEditRevisi('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i> Terima</button>
   <button onclick="tolakEditRevisi('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
 ` : ''}
@@ -3793,69 +3793,93 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             try {
                 const namaKoleksiDetail = sumberData === 'edit' ? 'edit1' : 'laporan';
                 const r = await pb.collection(namaKoleksiDetail).getOne(laporanId, { expand: 'user_id' });
+
+                // Kalau ini data yang sudah diedit, ambil juga laporan aslinya untuk digabung
+                let rAsli = null;
+                if (sumberData === 'edit' && r.laporan_asli_id) {
+                    try {
+                        rAsli = await pb.collection('laporan').getOne(r.laporan_asli_id, { expand: 'user_id' });
+                    } catch (e) {
+                        console.warn('Laporan asli tidak ditemukan, tampilkan data edit saja.', e);
+                    }
+                }
+
+                // Gabungkan field teks: pakai punya edit1 kalau isinya ada, kalau kosong pakai punya laporan asli
+                const rGabung = rAsli ? {
+                    ...rAsli,
+                    ...Object.fromEntries(Object.entries(r).filter(([k, v]) => v !== '' && v !== null && v !== undefined))
+                } : r;
+
                 currentModalRecordId = r.id;
-                tandaiKondisiAktif(r.kondisi_kendaraan || '');
-
+                tandaiKondisiAktif(rGabung.kondisi_kendaraan || '');
                 document.getElementById('modal-report-id').innerText = `ID LAPORAN: ${r.id}`;
-                document.getElementById('modal-tipe').innerText = r.kategori || 'Inspeksi Kendaraan';
-                document.getElementById('modal-supir').innerText = r.supir || r.expand?.user_id?.nama || '-';
+                document.getElementById('modal-tipe').innerText = rGabung.kategori || 'Inspeksi Kendaraan';
+                document.getElementById('modal-supir').innerText = rGabung.supir || rGabung.expand?.user_id?.nama || '-';
                 document.getElementById('modal-date').innerText = new Date(r.created).toLocaleString('id-ID');
-                document.getElementById('modal-jenis').innerText = r.jenis_kendaraan || '-';
-                document.getElementById('modal-nopol').innerText = r.nopol || '-';
-                document.getElementById('modal-rangka').innerText = r.no_rangka || '-';
-                document.getElementById('modal-stnk').innerText = r.masa_aktif_stnk || '-';
-                document.getElementById('modal-kir-aktif').innerText = r.masa_aktif_kir || '-';
-                document.getElementById('modal-sim').innerText = r.masa_aktif_sim || '-';
-                document.getElementById('modal-extra-info').innerText = r.catatan_admin || '';
+                document.getElementById('modal-jenis').innerText = rGabung.jenis_kendaraan || '-';
+                document.getElementById('modal-nopol').innerText = rGabung.nopol || '-';
+                document.getElementById('modal-rangka').innerText = rGabung.no_rangka || '-';
+                document.getElementById('modal-stnk').innerText = rGabung.masa_aktif_stnk || '-';
+                document.getElementById('modal-kir-aktif').innerText = rGabung.masa_aktif_kir || '-';
+                document.getElementById('modal-sim').innerText = rGabung.masa_aktif_sim || '-';
+                document.getElementById('modal-extra-info').innerText = rGabung.catatan_admin || '';
 
-                // Foto-foto utama (field file di PocketBase)
+                // Foto-foto: pakai foto BARU dari edit1 kalau ada, kalau tidak pakai foto LAMA dari laporan asli
                 const photosContainer = document.getElementById('modal-photos-container');
                 photosContainer.innerHTML = '';
-                const fotoFields = {
-                    'Foto Depan': r.foto_depan, 'Foto Belakang': r.foto_belakang,
-                    'Foto Kanan': r.foto_kanan, 'Foto Kiri': r.foto_kiri,
-                    'Foto STNK': r.foto_stnk, 'Foto KIR': r.foto_kir, 'Foto SIM': r.foto_sim
-                };
+                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
+                const labelFoto = { depan: 'Foto Depan', belakang: 'Foto Belakang', kanan: 'Foto Kanan', kiri: 'Foto Kiri', stnk: 'Foto STNK', kir: 'Foto KIR', sim: 'Foto SIM' };
                 let adaFoto = false;
-                Object.entries(fotoFields).forEach(([label, filename]) => {
+
+                daftarFotoId.forEach(fotoId => {
+                    const namaField = `foto_${fotoId}`;
+                    let sumberRecord = null, filename = null;
+                    if (r[namaField]) { sumberRecord = r; filename = r[namaField]; }
+                    else if (rAsli && rAsli[namaField]) { sumberRecord = rAsli; filename = rAsli[namaField]; }
                     if (!filename) return;
+
                     adaFoto = true;
-                    const imgId = `foto-detail-${label.replace(/\s+/g, '-')}-${r.id}`;
-                    const url = pb.files.getUrl(r, filename);
+                    const sudahDiganti = sumberData === 'edit' && !!r[namaField];
+                    const imgId = `foto-detail-${fotoId}-${r.id}`;
                     photosContainer.innerHTML += `
-        <div class="p-2.5 rounded-xl bg-haleyora-dark/80 border border-haleyora-blue/30 text-center space-y-1.5">
-    <img id="${imgId}" class="w-full h-14 sm:h-16 object-contain rounded-lg border border-slate-700 bg-black/50">
-    <span class="text-[11px] text-slate-200 font-bold uppercase block">${label}</span>
-  </div>`;
+        <div class="p-2.5 rounded-xl bg-haleyora-dark/80 border ${sudahDiganti ? 'border-amber-400' : 'border-haleyora-blue/30'} text-center space-y-1.5 relative">
+          ${sudahDiganti ? '<span class="absolute -top-2 -right-2 bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">BARU</span>' : ''}
+          <img id="${imgId}" class="w-full h-14 sm:h-16 object-contain rounded-lg border border-slate-700 bg-black/50">
+          <span class="text-[11px] text-slate-200 font-bold uppercase block">${labelFoto[fotoId]}</span>
+        </div>`;
                     setTimeout(() => {
                         const el = document.getElementById(imgId);
-                        if (el) pasangFotoAman(el, r, filename);
+                        if (el) pasangFotoAman(el, sumberRecord, filename);
                     }, 0);
                 });
                 if (!adaFoto) {
                     photosContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-3">Tidak ada foto terlampir.</p>`;
                 }
 
-                // Checklist komponen (field JSON)
+                // Checklist komponen: gabungkan, tandai item yang memang diminta admin untuk direvisi
                 const checklistWrapper = document.getElementById('modal-checklist-wrapper');
                 const tbody = document.getElementById('modal-checklist-body');
                 tbody.innerHTML = '';
-                const checklist = r.checklist || {};
-                const checklistKeys = Object.keys(checklist);
+                const checklistGabung = { ...(rAsli?.checklist || {}), ...(r.checklist || {}) };
+                const checklistKeys = Object.keys(checklistGabung);
+                const targetRevisiAsli = rAsli?.target_revisi || [];
+
                 if (checklistKeys.length > 0) {
                     checklistWrapper.classList.remove('hidden');
                     checklistKeys.forEach((key, idx) => {
-                        const entry = checklist[key];
-                        const kondisi = typeof entry === 'object' ? entry.kondisi : entry; // jaga kompatibilitas data lama
+                        const entry = checklistGabung[key];
+                        const kondisi = typeof entry === 'object' ? entry.kondisi : entry;
                         const keterangan = typeof entry === 'object' ? (entry.keterangan || '-') : '-';
                         const statusClass = kondisi === 'BAIK' ? 'text-emerald-400' : 'text-rose-400 font-bold';
+                        const nomorItem = allInspectionItems.indexOf(key) + 1;
+                        const berubah = sumberData === 'edit' && targetRevisiAsli.includes(`item_${nomorItem}`);
                         tbody.innerHTML += `
-    <tr class="hover:bg-haleyora-blue/10">
-      <td class="p-2 text-center text-slate-400">${idx + 1}</td>
-      <td class="p-2 font-medium text-slate-200">${key}</td>
-      <td class="p-2 text-center ${statusClass}">${kondisi}</td>
-      <td class="p-2">${keterangan}</td>
-    </tr>`;
+          <tr class="hover:bg-haleyora-blue/10 ${berubah ? 'bg-amber-500/10' : ''}">
+            <td class="p-2 text-center text-slate-400">${idx + 1}</td>
+            <td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="text-amber-400 text-[9px]">(diubah)</span>' : ''}</td>
+            <td class="p-2 text-center ${statusClass}">${kondisi}</td>
+            <td class="p-2">${keterangan}</td>
+          </tr>`;
                     });
                 } else {
                     checklistWrapper.classList.add('hidden');
