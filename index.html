@@ -120,6 +120,18 @@
             box-sizing: border-box !important;
             font-size: 9.5pt !important;
             line-height: 1.3 !important;
+
+            .pdf-export-mode .label-badge-revisi {
+                display: none !important;
+            }
+
+            .pdf-export-mode .border-amber-400 {
+                border-color: #cbd5e1 !important;
+            }
+
+            .pdf-export-mode .bg-amber-500\/10 {
+                background: transparent !important;
+            }
         }
 
         .pdf-export-mode table {
@@ -1084,7 +1096,7 @@ focus:border-haleyora-orange transition">
                         <div class="space-y-4 pt-4">
                             <div
                                 class="bg-haleyora-blue/30 text-haleyora-sky font-bold text-xs uppercase px-4 py-2.5 rounded-xl border border-haleyora-blue/50 tracking-wider">
-                                B. Checklist Kondisi Komponen Kendaraan (29 Item Utama)
+                                B. Checklist Kondisi Komponen Kendaraan (28 Item Utama)
                             </div>
                             <div class="overflow-x-auto rounded-2xl border border-haleyora-blue/30 bg-haleyora-dark/60">
                                 <table id="checklist-table" class="w-full text-left text-xs text-slate-200">
@@ -1104,15 +1116,13 @@ focus:border-haleyora-orange transition">
                                     <tbody class="divide-y divide-haleyora-blue/20">
                                         <script>
                                             const allInspectionItems = [
-                                                "Lampu depan", "Lampu Sein", "Lampu Rem & Lampu Mundur", "Lampu Plat Nomor",
-                                                "Kondisi Ban Depan (Tekanan & Ketebalan Alur)", "Kondisi Ban Belakang (Tekanan & Ketebalan Alur)", "Ban Serap",
-                                                "Wiper & Air Wiper (Washer)", "Kaca Depan (Windshield) & Kaca Samping/Belakang", "Spion Kiri, Kanan, dan Spion Tengah",
-                                                "Bumper Depan & Bumper Belakang", "Bodi / Cat & Pintu-pintu Kendaraan", "Kunci Pintu & Remote Alarm",
-                                                "Kondisi Tutup Tangki Bahan Bakar", "Knalpot", "Sabuk Pengaman (Seatbelt) Pengemudi & Penumpang",
-                                                "Sistem Pengereman (Rem Tangan & Rem Kaki)", "Klakson (Horn)", "Panel Speedometer & Indikator Bahan Bakar/Mesin",
-                                                "Sistem Pendingin AC & Blower", "Kemudi / Setir & Audio System", "Kebersihan Jok & Interior Kabin",
-                                                "Pedal Gas, Kopling, dan Rem", "Tuas Transmisi / Persneling", "Kaca Spion Dalam & Sun Visor",
-                                                "Kotak P3K (First Aid Kit)", "APAR (Alat Pemadam Api Ringan)", "Segitiga Pengaman & Dongkrak + Kunci Roda", "Kamera Operasional / Dashcam"
+                                                "Jok Depan & Belakang", "Sabuk Pengaman (Semua Kursi)", "AC & Ventilasi", "Panel Instrumen & Speedometer",
+                                                "Audio/Head Unit", "Lampu Kabin & Indikator", "Karpet Lantai", "Kebersihan Interior (Jok, Dashboard, Lantai)",
+                                                "APAR", "Segitiga Pengaman", "Kotak P3K", "Kaca Depan & Belakang",
+                                                "Kaca Spion Dalam & Luar", "Pintu & Handle Pintu", "Ban (Termasuk Ban Cadangan)", "Lampu Depan, Belakang, Sein, Hazard",
+                                                "Wiper & Washer", "Cat Body Kendaraan", "Kelengkapan Toolkit & Dongkrak", "Kebersihan Eksterior (Body, Kaca, Velg)",
+                                                "Kondisi Rem", "Tanggal Penggantian Oli Mesin", "Air Radiator", "AKI",
+                                                "V-Belt", "Buku Servis Tersedia & Ter-Update", "Odometer Tercatat", "Klakson"
                                             ];
                                             allInspectionItems.forEach((item, idx) => {
                                                 const itemNo = idx + 1;
@@ -1847,6 +1857,10 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
 
                 const fotoWajah = document.getElementById('pa-foto-wajah');
                 const avatarInisial = document.getElementById('pa-avatar-initial');
+                // Selalu mengembalikan satu ID teks, meski field relasinya tersimpan sebagai array
+                function idTunggal(v) {
+                    return Array.isArray(v) ? v[0] : v;
+                }
                 if (u.foto_wajah) {
                     pasangFotoAman(fotoWajah, u, u.foto_wajah);
                     fotoWajah.classList.remove('hidden');
@@ -3124,6 +3138,8 @@ rounded-xl font-bold transition">Batal</button>
         /* 5. FORM INSPEKSI SUBMIT */
         async function handleFormInspectionSubmit(e) {
             e.preventDefault();
+            const tombolKirim = document.getElementById('btn-kirim-inspeksi');
+            if (tombolKirim) tombolKirim.disabled = true; // cegah klik ganda
 
             // Bangun ulang FormData secara manual agar terkontrol penuh
             const formData = new FormData();
@@ -3164,7 +3180,7 @@ rounded-xl font-bold transition">Batal</button>
             });
 
             if (!semuaItemTerisi) {
-                alert('Mohon lengkapi seluruh 29 item checklist sebelum mengirim laporan.');
+                alert('Mohon lengkapi seluruh 28 item checklist sebelum mengirim laporan.');
                 return;
             }
 
@@ -3625,7 +3641,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 const edit = await pb.collection('edit1').getOne(edit1Id);
                 await pb.collection('edit1').update(edit1Id, { status_edit: 'ditolak' });
                 loadPendingReports();
-                bukaModalRevisi(edit.laporan_asli_id); // buka lagi form pilih bagian yang harus diperbaiki
+                bukaModalRevisi(idTunggal(edit.laporan_asli_id)); // buka lagi form pilih bagian yang harus diperbaiki
             } catch (error) {
                 console.error(error);
                 alert('Gagal menolak data revisi.');
@@ -3643,7 +3659,8 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 });
                 if (edit.checklist) dataUpdate.checklist = edit.checklist;
 
-                await pb.collection('laporan').update(edit.laporan_asli_id, dataUpdate);
+                const idAsli = idTunggal(edit.laporan_asli_id);
+                await pb.collection('laporan').update(idAsli, dataUpdate);
 
                 // Salin foto baru (kalau user upload ulang foto tertentu saat revisi)
                 const fieldFoto = ['foto_depan', 'foto_belakang', 'foto_kanan', 'foto_kiri', 'foto_stnk', 'foto_kir', 'foto_sim'];
@@ -3654,7 +3671,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                         const blob = await resFoto.blob();
                         const fd = new FormData();
                         fd.append(f, blob, edit[f]);
-                        await pb.collection('laporan').update(edit.laporan_asli_id, fd);
+                        await pb.collection('laporan').update(idAsli, fd);
                     }
                 }
 
@@ -3798,7 +3815,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 let rAsli = null;
                 if (sumberData === 'edit' && r.laporan_asli_id) {
                     try {
-                        rAsli = await pb.collection('laporan').getOne(r.laporan_asli_id, { expand: 'user_id' });
+                        rAsli = await pb.collection('laporan').getOne(idTunggal(r.laporan_asli_id), { expand: 'user_id' });
                     } catch (e) {
                         console.warn('Laporan asli tidak ditemukan, tampilkan data edit saja.', e);
                     }
@@ -3843,7 +3860,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                     const imgId = `foto-detail-${fotoId}-${r.id}`;
                     photosContainer.innerHTML += `
         <div class="p-2.5 rounded-xl bg-haleyora-dark/80 border ${sudahDiganti ? 'border-amber-400' : 'border-haleyora-blue/30'} text-center space-y-1.5 relative">
-          ${sudahDiganti ? '<span class="absolute -top-2 -right-2 bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">BARU</span>' : ''}
+          ${sudahDiganti ? '<span class="label-badge-revisi absolute -top-2 -right-2 bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">BARU</span>' : ''}
           <img id="${imgId}" class="w-full h-14 sm:h-16 object-contain rounded-lg border border-slate-700 bg-black/50">
           <span class="text-[11px] text-slate-200 font-bold uppercase block">${labelFoto[fotoId]}</span>
         </div>`;
@@ -3876,7 +3893,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                         tbody.innerHTML += `
           <tr class="hover:bg-haleyora-blue/10 ${berubah ? 'bg-amber-500/10' : ''}">
             <td class="p-2 text-center text-slate-400">${idx + 1}</td>
-            <td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="text-amber-400 text-[9px]">(diubah)</span>' : ''}</td>
+            <td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="text-amber-400 text-[9px]">(diubah)</span>' : ''}</td><td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="label-badge-revisi text-amber-400 text-[9px]">(diubah)</span>' : ''}</td>
             <td class="p-2 text-center ${statusClass}">${kondisi}</td>
             <td class="p-2">${keterangan}</td>
           </tr>`;
