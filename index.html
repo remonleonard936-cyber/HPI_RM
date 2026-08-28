@@ -59,6 +59,7 @@
         .text-gradient-orange {
             background: linear-gradient(135deg, #FF7A2F 0%, #F26A21 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -2496,6 +2497,40 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             return { url, options };
         };
 
+        function resetFormInspeksiState() {
+            isRevisiMode = false;
+            currentLaporanIdToEdit = null;
+
+            const form = document.getElementById('inspection-form');
+            if (form) form.reset();
+
+            // Buka kunci semua input (jaga-jaga kalau sebelumnya terkunci dari sesi revisi)
+            const allInputs = document.querySelectorAll(
+                '#inspection-form input, #inspection-form textarea, #inspection-form button[onclick^="startCamera"], #inspection-form button[id^="btn-snap"]'
+            );
+            allInputs.forEach(el => {
+                el.disabled = false;
+                el.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+
+            // Sembunyikan semua kolom keterangan kerusakan
+            document.querySelectorAll('#inspection-form textarea[id^="keterangan-item_"]').forEach(el => {
+                el.classList.add('hidden');
+                el.value = '';
+            });
+
+            // Reset pratinjau foto (baik hasil jepretan baru maupun foto lama yang ditampilkan saat revisi)
+            const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
+            daftarFotoId.forEach(fotoId => {
+                const previewEl = document.getElementById(`preview-${fotoId}`);
+                const textEl = document.getElementById(`text-${fotoId}`);
+                if (previewEl) { previewEl.src = ''; previewEl.classList.add('hidden'); }
+                if (textEl) { textEl.textContent = 'Kamera Mati'; textEl.classList.remove('hidden'); }
+                const fileInput = document.getElementById(`file-${fotoId}`);
+                if (fileInput) fileInput.value = '';
+            });
+        }
+
         // Ambil URL file PocketBase dengan header anti-warning ngrok, lalu tempel ke elemen <img>
         async function pasangFotoAman(imgElement, record, filename) {
             if (!filename) return;
@@ -3020,6 +3055,7 @@ rounded-xl font-bold transition">Batal</button>
 
                 // Jika lolos, simpan data user yang sedang login
                 currentUser = user;
+                resetFormInspeksiState(); // BARU: pastikan form inspeksi bersih di setiap sesi login baru
 
                 // Routing berdasarkan Role
                 if (currentUser.role === 'admin') {
@@ -3893,7 +3929,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                         tbody.innerHTML += `
           <tr class="hover:bg-haleyora-blue/10 ${berubah ? 'bg-amber-500/10' : ''}">
             <td class="p-2 text-center text-slate-400">${idx + 1}</td>
-            <td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="text-amber-400 text-[9px]">(diubah)</span>' : ''}</td><td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="label-badge-revisi text-amber-400 text-[9px]">(diubah)</span>' : ''}</td>
+            <td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="label-badge-revisi text-amber-400 text-[9px]">(diubah)</span>' : ''}</td>
             <td class="p-2 text-center ${statusClass}">${kondisi}</td>
             <td class="p-2">${keterangan}</td>
           </tr>`;
@@ -3916,6 +3952,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
         // Fungsi untuk memproses aksi keluar (logout)
         function logout() {
+            resetFormInspeksiState(); // BARU: bersihkan sisa status revisi sebelum logout
             // 1. Hapus sesi autentikasi dari PocketBase (karena kamu memakai SDK PocketBase)
             if (typeof pb !== 'undefined') {
                 pb.authStore.clear();
