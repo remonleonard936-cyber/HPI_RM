@@ -1859,9 +1859,6 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 const fotoWajah = document.getElementById('pa-foto-wajah');
                 const avatarInisial = document.getElementById('pa-avatar-initial');
                 // Selalu mengembalikan satu ID teks, meski field relasinya tersimpan sebagai array
-                function idTunggal(v) {
-                    return Array.isArray(v) ? v[0] : v;
-                }
                 if (u.foto_wajah) {
                     pasangFotoAman(fotoWajah, u, u.foto_wajah);
                     fotoWajah.classList.remove('hidden');
@@ -3217,9 +3214,9 @@ rounded-xl font-bold transition">Batal</button>
 
             if (!semuaItemTerisi) {
                 alert('Mohon lengkapi seluruh 28 item checklist sebelum mengirim laporan.');
+                if (tombolKirim) tombolKirim.disabled = false;
                 return;
             }
-
             formData.append('checklist', JSON.stringify(checklistData));
             formData.append('user_id', currentUser.id);
 
