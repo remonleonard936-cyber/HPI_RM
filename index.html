@@ -3234,7 +3234,7 @@ rounded-xl font-bold transition">Batal</button>
                     currentLaporanIdToEdit = null;
                 } else {
                     formData.append('status', 'pending');
-                    await pb.collection('laporan').create(formData);
+                    await pb.collection('laporan').create(formData, { requestKey: null });
                     alert("Laporan inspeksi kendaraan baru berhasil dikirim!");
                 }
 
@@ -3716,8 +3716,12 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 loadPendingReports();
                 updateAdminStats();
             } catch (error) {
-                console.error(error);
-                alert('Gagal menerima data revisi.');
+                console.error("Gagal menerima data revisi:", error);
+                const errData = error?.response?.data || error?.data?.data || {};
+                const pesanField = Object.entries(errData)
+                    .map(([field, info]) => `• ${field}: ${info.message || JSON.stringify(info)}`)
+                    .join('\n');
+                alert("Gagal menerima data revisi. Detail:\n\n" + (pesanField || error?.message || 'Error tidak diketahui.'));
             }
         }
 
