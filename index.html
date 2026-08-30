@@ -2528,6 +2528,10 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             });
         }
 
+        function idTunggal(v) {
+            return Array.isArray(v) ? v[0] : v;
+        }
+
         // Ambil URL file PocketBase dengan header anti-warning ngrok, lalu tempel ke elemen <img>
         async function pasangFotoAman(imgElement, record, filename) {
             if (!filename) return;
