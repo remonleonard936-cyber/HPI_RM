@@ -3226,6 +3226,19 @@ rounded-xl font-bold transition">Batal</button>
 
             try {
                 if (isRevisiMode) {
+                    // Ambil laporan asli, lalu salin foto-foto yang TIDAK diubah user supaya edit1 lengkap
+                    const rekamAsli = await pb.collection('laporan').getOne(currentLaporanIdToEdit);
+                    for (const fotoId of Object.keys(namaFieldFoto)) {
+                        const namaField = namaFieldFoto[fotoId];
+                        const sudahDiisiBaru = formData.has(namaField); // true kalau user memang memotret ulang bagian ini
+                        if (!sudahDiisiBaru && rekamAsli[namaField]) {
+                            const urlLama = pb.files.getUrl(rekamAsli, rekamAsli[namaField]);
+                            const resFoto = await fetch(urlLama, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                            const blobFoto = await resFoto.blob();
+                            formData.append(namaField, blobFoto, rekamAsli[namaField]);
+                        }
+                    }
+
                     formData.append('laporan_asli_id', currentLaporanIdToEdit);
                     formData.append('status_edit', 'menunggu_verifikasi');
                     await pb.collection('edit1').create(formData, { requestKey: null });
@@ -3295,8 +3308,9 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
             ${item.status === 'pending' ? `
               <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition mr-1"><i class="fa-solid fa-check"></i></button>
               <button onclick="updateStatusServis('${item.id}', 'selesai')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
-            ` : '-'}
-          </td>
+` : ''}
+<button onclick="hapusLaporan('${item.id}', 'servis')" class="bg-slate-700 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+</td>
         </tr>`;
                 });
             } catch (error) {
@@ -3418,8 +3432,9 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
             ${item.status === 'pending' ? `
               <button onclick="updateStatusKecelakaan('${item.id}', 'ditindaklanjuti')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition mr-1"><i class="fa-solid fa-check"></i></button>
               <button onclick="updateStatusKecelakaan('${item.id}', 'selesai')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
-            ` : '-'}
-          </td>
+` : ''}
+<button onclick="hapusLaporan('${item.id}', 'kecelakaan')" class="bg-slate-700 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+</td>
         </tr>`;
                 });
                 records.items.forEach(item => {
@@ -3547,6 +3562,7 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
     <td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
       <div class="flex items-center justify-center gap-2">
         <button onclick="bukaModalDetail('${item.id}', '${modeDataInspeksi}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Detail</button>
+<button onclick="hapusLaporan('${item.id}', '${modeDataInspeksi === 'edit' ? 'edit1' : 'laporan'}')" class="bg-slate-700 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Hapus Laporan"><i class="fa-solid fa-trash"></i></button>
         ${modeDataInspeksi === 'asli' && item.status === 'pending' ? `
   <button onclick="updateReportStatus('${item.id}', 'selesai')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
   <button onclick="bukaModalRevisi('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
@@ -3685,29 +3701,46 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             }
         }
 
+        async function hapusLaporan(id, koleksi) {
+            if (!confirm('Yakin ingin menghapus laporan ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) return;
+            try {
+                await pb.collection(koleksi).delete(id);
+                alert('Laporan berhasil dihapus.');
+                if (koleksi === 'laporan' || koleksi === 'edit1') loadPendingReports();
+                else if (koleksi === 'servis') loadServisReports();
+                else if (koleksi === 'kecelakaan') loadKecelakaanReports();
+            } catch (error) {
+                console.error("Gagal menghapus laporan:", error);
+                alert('Gagal menghapus laporan.');
+            }
+        }
+
         async function terimaEditRevisi(edit1Id) {
             if (!confirm('Terima data revisi ini dan gabungkan ke laporan asli?')) return;
             try {
                 const edit = await pb.collection('edit1').getOne(edit1Id);
-                const dataUpdate = { status: 'selesai', catatan_admin: '', target_revisi: [], notif_dibaca: false };
-
-                ['supir', 'jenis_kendaraan', 'nopol', 'no_rangka', 'masa_aktif_stnk', 'masa_aktif_kir', 'masa_aktif_sim'].forEach(f => {
-                    if (edit[f]) dataUpdate[f] = edit[f];
-                });
-                if (edit.checklist) dataUpdate.checklist = edit.checklist;
-
                 const idAsli = idTunggal(edit.laporan_asli_id);
+
+                // Karena edit1 sekarang sudah lengkap (bukan cuma yang berubah), salin langsung semua field teks & checklist
+                const dataUpdate = {
+                    status: 'selesai', catatan_admin: '', target_revisi: [], notif_dibaca: false,
+                    supir: edit.supir, jenis_kendaraan: edit.jenis_kendaraan, nopol: edit.nopol,
+                    no_rangka: edit.no_rangka, masa_aktif_stnk: edit.masa_aktif_stnk,
+                    masa_aktif_kir: edit.masa_aktif_kir, masa_aktif_sim: edit.masa_aktif_sim,
+                    checklist: edit.checklist
+                };
                 await pb.collection('laporan').update(idAsli, dataUpdate);
 
-                // Salin foto baru (kalau user upload ulang foto tertentu saat revisi)
-                const fieldFoto = ['foto_depan', 'foto_belakang', 'foto_kanan', 'foto_kiri', 'foto_stnk', 'foto_kir', 'foto_sim'];
-                for (const f of fieldFoto) {
-                    if (edit[f]) {
-                        const urlLama = pb.files.getUrl(edit, edit[f]);
+                // Salin semua foto dari edit1 ke laporan asli (edit1 sudah lengkap 7 foto)
+                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
+                for (const fotoId of daftarFotoId) {
+                    const namaField = `foto_${fotoId}`;
+                    if (edit[namaField]) {
+                        const urlLama = pb.files.getUrl(edit, edit[namaField]);
                         const resFoto = await fetch(urlLama, { headers: { 'ngrok-skip-browser-warning': 'true' } });
                         const blob = await resFoto.blob();
                         const fd = new FormData();
-                        fd.append(f, blob, edit[f]);
+                        fd.append(namaField, blob, edit[namaField]);
                         await pb.collection('laporan').update(idAsli, fd);
                     }
                 }
@@ -3719,9 +3752,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             } catch (error) {
                 console.error("Gagal menerima data revisi:", error);
                 const errData = error?.response?.data || error?.data?.data || {};
-                const pesanField = Object.entries(errData)
-                    .map(([field, info]) => `• ${field}: ${info.message || JSON.stringify(info)}`)
-                    .join('\n');
+                const pesanField = Object.entries(errData).map(([field, info]) => `• ${field}: ${info.message || JSON.stringify(info)}`).join('\n');
                 alert("Gagal menerima data revisi. Detail:\n\n" + (pesanField || error?.message || 'Error tidak diketahui.'));
             }
         }
@@ -3852,37 +3883,20 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 const namaKoleksiDetail = sumberData === 'edit' ? 'edit1' : 'laporan';
                 const r = await pb.collection(namaKoleksiDetail).getOne(laporanId, { expand: 'user_id' });
 
-                // Kalau ini data yang sudah diedit, ambil juga laporan aslinya untuk digabung
-                let rAsli = null;
-                if (sumberData === 'edit' && r.laporan_asli_id) {
-                    try {
-                        rAsli = await pb.collection('laporan').getOne(idTunggal(r.laporan_asli_id), { expand: 'user_id' });
-                    } catch (e) {
-                        console.warn('Laporan asli tidak ditemukan, tampilkan data edit saja.', e);
-                    }
-                }
-
-                // Gabungkan field teks: pakai punya edit1 kalau isinya ada, kalau kosong pakai punya laporan asli
-                const rGabung = rAsli ? {
-                    ...rAsli,
-                    ...Object.fromEntries(Object.entries(r).filter(([k, v]) => v !== '' && v !== null && v !== undefined))
-                } : r;
-
                 currentModalRecordId = r.id;
-                tandaiKondisiAktif(rGabung.kondisi_kendaraan || '');
+                tandaiKondisiAktif(r.kondisi_kendaraan || '');
                 document.getElementById('modal-report-id').innerText = `ID LAPORAN: ${r.id}`;
-                document.getElementById('modal-tipe').innerText = rGabung.kategori || 'Inspeksi Kendaraan';
-                document.getElementById('modal-supir').innerText = rGabung.supir || rGabung.expand?.user_id?.nama || '-';
+                document.getElementById('modal-tipe').innerText = r.kategori || 'Inspeksi Kendaraan';
+                document.getElementById('modal-supir').innerText = r.supir || r.expand?.user_id?.nama || '-';
                 document.getElementById('modal-date').innerText = new Date(r.created).toLocaleString('id-ID');
-                document.getElementById('modal-jenis').innerText = rGabung.jenis_kendaraan || '-';
-                document.getElementById('modal-nopol').innerText = rGabung.nopol || '-';
-                document.getElementById('modal-rangka').innerText = rGabung.no_rangka || '-';
-                document.getElementById('modal-stnk').innerText = rGabung.masa_aktif_stnk || '-';
-                document.getElementById('modal-kir-aktif').innerText = rGabung.masa_aktif_kir || '-';
-                document.getElementById('modal-sim').innerText = rGabung.masa_aktif_sim || '-';
-                document.getElementById('modal-extra-info').innerText = rGabung.catatan_admin || '';
+                document.getElementById('modal-jenis').innerText = r.jenis_kendaraan || '-';
+                document.getElementById('modal-nopol').innerText = r.nopol || '-';
+                document.getElementById('modal-rangka').innerText = r.no_rangka || '-';
+                document.getElementById('modal-stnk').innerText = r.masa_aktif_stnk || '-';
+                document.getElementById('modal-kir-aktif').innerText = r.masa_aktif_kir || '-';
+                document.getElementById('modal-sim').innerText = r.masa_aktif_sim || '-';
+                document.getElementById('modal-extra-info').innerText = r.catatan_admin || '';
 
-                // Foto-foto: pakai foto BARU dari edit1 kalau ada, kalau tidak pakai foto LAMA dari laporan asli
                 const photosContainer = document.getElementById('modal-photos-container');
                 photosContainer.innerHTML = '';
                 const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
@@ -3891,50 +3905,40 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
                 daftarFotoId.forEach(fotoId => {
                     const namaField = `foto_${fotoId}`;
-                    let sumberRecord = null, filename = null;
-                    if (r[namaField]) { sumberRecord = r; filename = r[namaField]; }
-                    else if (rAsli && rAsli[namaField]) { sumberRecord = rAsli; filename = rAsli[namaField]; }
-                    if (!filename) return;
-
+                    if (!r[namaField]) return;
                     adaFoto = true;
-                    const sudahDiganti = sumberData === 'edit' && !!r[namaField];
                     const imgId = `foto-detail-${fotoId}-${r.id}`;
                     photosContainer.innerHTML += `
-        <div class="p-2.5 rounded-xl bg-haleyora-dark/80 border ${sudahDiganti ? 'border-amber-400' : 'border-haleyora-blue/30'} text-center space-y-1.5 relative">
-          ${sudahDiganti ? '<span class="label-badge-revisi absolute -top-2 -right-2 bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">BARU</span>' : ''}
+        <div class="p-2.5 rounded-xl bg-haleyora-dark/80 border border-haleyora-blue/30 text-center space-y-1.5">
           <img id="${imgId}" class="w-full h-14 sm:h-16 object-contain rounded-lg border border-slate-700 bg-black/50">
           <span class="text-[11px] text-slate-200 font-bold uppercase block">${labelFoto[fotoId]}</span>
         </div>`;
                     setTimeout(() => {
                         const el = document.getElementById(imgId);
-                        if (el) pasangFotoAman(el, sumberRecord, filename);
+                        if (el) pasangFotoAman(el, r, r[namaField]);
                     }, 0);
                 });
                 if (!adaFoto) {
                     photosContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-3">Tidak ada foto terlampir.</p>`;
                 }
 
-                // Checklist komponen: gabungkan, tandai item yang memang diminta admin untuk direvisi
                 const checklistWrapper = document.getElementById('modal-checklist-wrapper');
                 const tbody = document.getElementById('modal-checklist-body');
                 tbody.innerHTML = '';
-                const checklistGabung = { ...(rAsli?.checklist || {}), ...(r.checklist || {}) };
-                const checklistKeys = Object.keys(checklistGabung);
-                const targetRevisiAsli = rAsli?.target_revisi || [];
+                const checklist = r.checklist || {};
+                const checklistKeys = Object.keys(checklist);
 
                 if (checklistKeys.length > 0) {
                     checklistWrapper.classList.remove('hidden');
                     checklistKeys.forEach((key, idx) => {
-                        const entry = checklistGabung[key];
+                        const entry = checklist[key];
                         const kondisi = typeof entry === 'object' ? entry.kondisi : entry;
                         const keterangan = typeof entry === 'object' ? (entry.keterangan || '-') : '-';
                         const statusClass = kondisi === 'BAIK' ? 'text-emerald-400' : 'text-rose-400 font-bold';
-                        const nomorItem = allInspectionItems.indexOf(key) + 1;
-                        const berubah = sumberData === 'edit' && targetRevisiAsli.includes(`item_${nomorItem}`);
                         tbody.innerHTML += `
-          <tr class="hover:bg-haleyora-blue/10 ${berubah ? 'bg-amber-500/10' : ''}">
+          <tr class="hover:bg-haleyora-blue/10">
             <td class="p-2 text-center text-slate-400">${idx + 1}</td>
-            <td class="p-2 font-medium text-slate-200">${key}${berubah ? ' <span class="label-badge-revisi text-amber-400 text-[9px]">(diubah)</span>' : ''}</td>
+            <td class="p-2 font-medium text-slate-200">${key}</td>
             <td class="p-2 text-center ${statusClass}">${kondisi}</td>
             <td class="p-2">${keterangan}</td>
           </tr>`;
