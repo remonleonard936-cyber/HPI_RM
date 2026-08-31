@@ -1915,65 +1915,41 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             class="absolute rounded-full bg-gradient-to-r from-haleyora-orange via-amber-500 to-haleyora-orange transition-all duration-750 ease-out"
             style="width: 50px; height: 50px; transform: translate(-50%, -50%) scale(0);"></span>
     </div>
+    <!-- ================= FLOATING CHAT BOX ================= -->
+    <div id="chat-widget" class="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+        <!-- Tombol Toggle Chat -->
+        <button id="chat-toggle-btn" onclick="toggleChat()"
+            class="bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white w-14 h-14 rounded-full shadow-lg shadow-haleyora-orange/30 flex items-center justify-center text-2xl transition hover:scale-105 active:scale-95">
+            <i class="fa-solid fa-comments"></i>
+        </button>
 
-    <!-- ================= FITUR CHATBOX INTERAKTIF ================= -->
-    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-        <!-- Jendela Chatbox -->
-        <div id="chatbox-window"
-            class="hidden w-80 sm:w-96 h-[480px] bg-haleyora-card border border-haleyora-sky/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 backdrop-blur-xl">
-            <!-- Header Chatbox -->
-            <div
-                class="bg-gradient-to-r from-haleyora-blue to-haleyora-dark p-4 border-b border-haleyora-sky/30 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
+        <!-- Panel Chat Box (Awalnya Tersembunyi) -->
+        <div id="chat-panel"
+            class="hidden w-80 sm:w-96 bg-haleyora-card/95 border border-haleyora-blue/50 rounded-2xl shadow-2xl backdrop-blur-xl mb-4 overflow-hidden flex flex-col transition-all duration-300 transform origin-bottom-right">
+
+            <!-- Header Chat -->
+            <div class="bg-haleyora-dark/80 border-b border-haleyora-blue/40 p-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
                     <div
-                        class="w-9 h-9 rounded-full bg-haleyora-orange flex items-center justify-center text-white font-bold text-sm shadow">
+                        class="w-8 h-8 rounded-full bg-haleyora-sky/20 border border-haleyora-sky flex items-center justify-center text-haleyora-sky">
                         <i class="fa-solid fa-robot"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-white">Asisten Haleyora</h3>
-                        <p class="text-[10px] text-emerald-400 flex items-center gap-1">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Online | Tanya
-                            seputar HPI
-                        </p>
+                        <h3 class="text-white font-bold text-sm">Asisten Operasional</h3>
+                        <p class="text-[10px] text-emerald-400"><i
+                                class="fa-solid fa-circle text-[8px] animate-pulse"></i> Online</p>
                     </div>
                 </div>
-                <button onclick="toggleChatbox()" class="text-slate-400 hover:text-white transition p-1 text-lg">
-                    <i class="fa-solid fa-xmark"></i>
+                <button onclick="toggleChat()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <!-- Area Pesan (Body) -->
-            <div id="chatbox-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
-                <div class="flex items-start gap-2">
-                    <div
-                        class="w-7 h-7 rounded-full bg-haleyora-orange flex items-center justify-center text-white shrink-0 text-[10px]">
-                        <i class="fa-solid fa-robot"></i>
-                    </div>
-                    <div
-                        class="bg-haleyora-dark/80 border border-haleyora-blue/40 text-slate-200 p-3 rounded-2xl rounded-tl-none max-w-[80%] leading-relaxed">
-                        Halo! Saya asisten virtual PT Haleyora Powerindo. Silakan tanyakan informasi seputar alamat
-                        kantor, kontak, jam operasional, atau layanan kami.
-                    </div>
-                </div>
+            <!-- Area Pesan -->
+            <div id="chat-messages" class="p-4 h-80 overflow-y-auto flex flex-col gap-3 scroll-smooth">
+                <!-- Pesan akan dirender di sini oleh JavaScript -->
             </div>
-
-            <!-- Input Chatbox -->
-            <form onsubmit="handleChatSubmit(event)"
-                class="p-3 border-t border-haleyora-blue/30 bg-haleyora-dark/90 flex gap-2">
-                <input type="text" id="chatbox-input" placeholder="Ketik pertanyaan Anda..." required
-                    class="flex-1 bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-haleyora-orange">
-                <button type="submit"
-                    class="bg-haleyora-orange hover:bg-haleyora-orangeHover text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </form>
         </div>
-
-        <!-- Tombol Mengambang (Trigger Button) -->
-        <button onclick="toggleChatbox()"
-            class="bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white w-14 h-14 rounded-full shadow-2xl shadow-haleyora-orange/40 flex items-center justify-center text-xl transition hover:scale-110 active:scale-95">
-            <i id="chatbox-icon" class="fa-solid fa-comments"></i>
-        </button>
     </div>
 
     <!-- PocketBase SDK -->
@@ -1981,125 +1957,176 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
     <!-- SCRIPT JAVASCRIPT UTAMA -->
     <script>
 
-        // Buka / Tutup Jendela Chatbox
-        function toggleChatbox() {
-            const chatWindow = document.getElementById('chatbox-window');
-            const chatIcon = document.getElementById('chatbox-icon');
+        // 1. Database Pertanyaan & Pilihan Spesifik (Telah Diperluas)
+        const chatData = {
+            start: {
+                text: "Halo! Saya Asisten Operasional PT Haleyora Powerindo. Apa kendala atau informasi yang ingin Anda cari hari ini?",
+                options: [
+                    { text: "Bantuan Inspeksi Kendaraan", next: "inspeksi" },
+                    { text: "Cara Pengajuan Servis", next: "servis" },
+                    { text: "Prosedur Lapor Kecelakaan", next: "kecelakaan" },
+                    { text: "Informasi Perusahaan & K3", next: "perusahaan" } // <-- Menu Baru
+                ]
+            },
 
-            if (chatWindow.classList.contains('hidden')) {
-                chatWindow.classList.remove('hidden');
-                chatIcon.classList.remove('fa-comments');
-                chatIcon.classList.add('fa-xmark');
-            } else {
-                chatWindow.classList.add('hidden');
-                chatIcon.classList.remove('fa-xmark');
-                chatIcon.classList.add('fa-comments');
+            // ================= KELOMPOK OPERASIONAL & APLIKASI =================
+            inspeksi: {
+                text: "Terkait Inspeksi Kendaraan, bagian mana yang Anda perlukan bantuannya?",
+                options: [
+                    { text: "Kamera tidak bisa dibuka", next: "solusiKamera" },
+                    { text: "Cara mengisi 28 Checklist", next: "solusiChecklist" },
+                    { text: "Gagal kirim form inspeksi", next: "solusiKirim" },
+                    { text: "Kembali ke Awal", next: "start" }
+                ]
+            },
+            servis: {
+                text: "Untuk pengajuan servis darurat, Anda bisa menekan tombol 'Tombol Servis' berwarna biru di halaman Inspeksi. Apakah sistem menampilkan pesan error?",
+                options: [
+                    { text: "Ya, form servis tidak muncul", next: "solusiServis" },
+                    { text: "Hanya ingin tahu status servis", next: "statusServis" },
+                    { text: "Kembali ke Awal", next: "start" }
+                ]
+            },
+            kecelakaan: {
+                text: "PENTING: Utamakan keselamatan Anda! Untuk kecelakaan, gunakan tombol merah 'Tombol Kecelakaan'. Pastikan Anda memiliki foto bukti dan kronologi. Butuh panduan lanjut?",
+                options: [
+                    { text: "Tampilkan panduan Lapor", next: "panduanKecelakaan" },
+                    { text: "Kembali ke Awal", next: "start" }
+                ]
+            },
+
+            // ================= KELOMPOK INFORMASI PERUSAHAAN (BARU) =================
+            perusahaan: {
+                text: "Pusat Informasi PT Haleyora Powerindo. Silakan pilih topik spesifik yang ingin Anda ketahui:",
+                options: [
+                    { text: "Profil & Visi Misi HPI", next: "infoProfil" },
+                    { text: "Kebijakan K3 & Zero Accident", next: "infoK3" },
+                    { text: "SOP Kendaraan Operasional", next: "infoSOPKendaraan" },
+                    { text: "Info Kontak Cabang Medan", next: "infoCabangMedan" },
+                    { text: "Kembali ke Awal", next: "start" }
+                ]
+            },
+            infoProfil: {
+                text: "PT Haleyora Powerindo (HPI) adalah anak perusahaan PT PLN (Persero) yang bergerak di bidang Operation & Maintenance (O&M), pengamanan, dan layanan pelanggan. Visi kami adalah menjadi perusahaan penyedia layanan operasi dan pemeliharaan terkemuka yang mendukung keandalan listrik nasional.",
+                options: [{ text: "Kembali ke Menu Perusahaan", next: "perusahaan" }]
+            },
+            infoK3: {
+                text: "HPI menerapkan budaya 'Zero Accident' (Nihil Kecelakaan Kerja). Seluruh petugas wajib menggunakan Alat Pelindung Diri (APD) lengkap sebelum bertugas dan memastikan kondisi fisik serta mental dalam keadaan prima. Keselamatan adalah prioritas utama, tidak ada kompromi.",
+                options: [{ text: "Kembali ke Menu Perusahaan", next: "perusahaan" }]
+            },
+            infoSOPKendaraan: {
+                text: "SOP Penggunaan Kendaraan: 1. Wajib memiliki SIM & kelengkapan STNK aktif. 2. Wajib melakukan pengisian Form Inspeksi Harian sebelum unit digunakan. 3. Kendaraan hanya boleh digunakan untuk kepentingan dinas operasional perusahaan.",
+                options: [{ text: "Kembali ke Menu Perusahaan", next: "perusahaan" }]
+            },
+            infoCabangMedan: {
+                text: "Untuk urusan operasional PT Haleyora Powerindo Cabang Medan, koordinasi terkait persetujuan (approval) pemeliharaan unit, pengajuan anggaran bengkel, dan validasi data inspeksi diawasi langsung oleh Supervisor dan Admin Cabang. Pastikan laporan Anda tersubmit di sistem ini agar terekam secara realtime.",
+                options: [{ text: "Kembali ke Menu Perusahaan", next: "perusahaan" }]
+            },
+
+            // ================= JAWABAN SOLUSI (DARI IDE SEBELUMNYA) =================
+            solusiKamera: {
+                text: "Jika kamera mati: Pastikan Anda memberikan izin (allow camera) pada browser Anda. Coba segarkan (refresh) halaman dan pilih antara 'Kamera Depan' atau 'Belakang'.",
+                options: [{ text: "Kembali ke Awal", next: "start" }]
+            },
+            solusiChecklist: {
+                text: "Anda wajib memilih antara 'BAIK' atau 'TIDAK BAIK' untuk ke-28 item. Jika memilih 'TIDAK BAIK', kolom keterangan akan muncul dan wajib diisi detail kerusakannya.",
+                options: [{ text: "Kembali ke Awal", next: "start" }]
+            },
+            solusiKirim: {
+                text: "Pastikan seluruh foto (Depan, Belakang, Kanan, Kiri, STNK, SIM, KIR) sudah terisi dan nomor polisi diketik dengan benar.",
+                options: [{ text: "Kembali ke Awal", next: "start" }]
+            },
+            solusiServis: {
+                text: "Silakan laporkan ke Admin Pusat atau hubungi nomor kontak penanggung jawab kendaraan untuk penanganan manual sementara waktu.",
+                options: [{ text: "Kembali ke Awal", next: "start" }]
+            },
+            statusServis: {
+                text: "Status pengajuan servis Anda sedang ditinjau oleh Admin (Pending Action). Cek panel notifikasi secara berkala untuk melihat persetujuan.",
+                options: [{ text: "Kembali ke Awal", next: "start" }]
+            },
+            panduanKecelakaan: {
+                text: "1. Amankan area. 2. Foto kondisi kendaraan dan sekitar. 3. Buka 'Tombol Kecelakaan' dan ketik kronologi kejadian. 4. Sistem akan mengirim notifikasi darurat langsung ke dashboard admin.",
+                options: [{ text: "Kembali ke Awal", next: "start" }]
             }
-        }
+        };
 
-        // Kirim Pesan & Olah Jawaban
-        function handleChatSubmit(e) {
-            e.preventDefault();
-            const inputEl = document.getElementById('chatbox-input');
-            const query = inputEl.value.trim();
-            if (!query) return;
+        // 2. Fungsi untuk Render Pesan & Pilihan
+        const chatMessages = document.getElementById("chat-messages");
 
-            // Tampilkan Pesan User
-            appendChatMessage('user', query);
-            inputEl.value = '';
+        function renderChat(nodeId) {
+            const node = chatData[nodeId];
 
-            // Proses Jawaban Asisten setelah jeda singkat
-            setTimeout(() => {
-                const response = generateChatResponse(query);
-                appendChatMessage('bot', response);
-            }, 400);
-        }
+            // Hapus pilihan (opsi) sebelumnya agar chat terlihat mengalir ke bawah
+            const oldOptions = document.querySelectorAll('.chat-options-container');
+            oldOptions.forEach(el => el.remove());
 
-        // Tambahkan Elemen Pesan ke Layar Chatbox
-        function appendChatMessage(sender, text) {
-            const container = document.getElementById('chatbox-messages');
-            const msgDiv = document.createElement('div');
-
-            if (sender === 'user') {
-                msgDiv.className = 'flex items-end justify-end gap-2';
-                msgDiv.innerHTML = `
-            <div class="bg-haleyora-blue text-white p-3 rounded-2xl rounded-tr-none max-w-[80%] leading-relaxed">
-                ${escapeHTML(text)}
-            </div>
-        `;
-            } else {
-                msgDiv.className = 'flex items-start gap-2';
-                msgDiv.innerHTML = `
-            <div class="w-7 h-7 rounded-full bg-haleyora-orange flex items-center justify-center text-white shrink-0 text-[10px]">
+            // Render Pesan Bot
+            const botMsg = document.createElement("div");
+            botMsg.className = "flex gap-2 mb-2 animate-fade-in-row";
+            botMsg.innerHTML = `
+            <div class="w-6 h-6 rounded-full bg-haleyora-sky/20 border border-haleyora-sky flex items-center justify-center shrink-0 text-haleyora-sky text-[10px]">
                 <i class="fa-solid fa-robot"></i>
             </div>
-            <div class="bg-haleyora-dark/80 border border-haleyora-blue/40 text-slate-200 p-3 rounded-2xl rounded-tl-none max-w-[80%] leading-relaxed space-y-1">
-                ${text}
+            <div class="bg-haleyora-dark/60 border border-haleyora-blue/30 text-slate-200 text-xs p-3 rounded-tr-xl rounded-b-xl max-w-[85%] leading-relaxed">
+                ${node.text}
             </div>
         `;
+            chatMessages.appendChild(botMsg);
+
+            // Render Tombol Pilihan (Multiple Choice)
+            if (node.options && node.options.length > 0) {
+                const optionsContainer = document.createElement("div");
+                optionsContainer.className = "flex flex-col gap-2 pl-8 pr-2 chat-options-container animate-fade-in-row";
+
+                node.options.forEach(opt => {
+                    const btn = document.createElement("button");
+                    btn.className = "text-left text-xs text-haleyora-sky border border-haleyora-sky/40 bg-haleyora-sky/10 hover:bg-haleyora-sky/20 px-3 py-2 rounded-lg transition";
+                    btn.innerText = opt.text;
+                    btn.onclick = () => handleUserChoice(opt.text, opt.next);
+                    optionsContainer.appendChild(btn);
+                });
+                chatMessages.appendChild(optionsContainer);
             }
 
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
+            // Auto-scroll ke paling bawah
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Pembersihan String HTML untuk Keamanan
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g,
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
+        // 3. Menangani Pilihan User
+        function handleUserChoice(userText, nextNode) {
+            // Render pesan user di kanan
+            const userMsg = document.createElement("div");
+            userMsg.className = "flex justify-end mb-4 animate-fade-in-row";
+            userMsg.innerHTML = `
+            <div class="bg-haleyora-orange/90 text-white text-xs p-3 rounded-tl-xl rounded-b-xl max-w-[85%]">
+                ${userText}
+            </div>
+        `;
+            chatMessages.appendChild(userMsg);
+
+            // Beri jeda kecil agar terkesan bot sedang "mengetik"
+            setTimeout(() => {
+                renderChat(nextNode);
+            }, 500);
         }
 
-        // Mesin Jawaban Otomatis Khusus PT Haleyora Powerindo
-        function generateChatResponse(input) {
-            const text = input.toLowerCase();
+        // 4. Toggle Tampil/Sembunyi Chat Box
+        function toggleChat() {
+            const panel = document.getElementById("chat-panel");
+            const icon = document.querySelector("#chat-toggle-btn i");
 
-            // 1. Jawaban Alamat (Pusat & Medan)
-            if (text.includes('alamat') || text.includes('lokasi') || text.includes('kantor') || text.includes('dimana') || text.includes('tempat')) {
-                return `
-            <strong>Alamat Kantor PT Haleyora Powerindo:</strong><br><br>
-            🏢 <strong>Kantor Pusat:</strong><br>
-            Jl. Pasir Putih No.1, Ancol, Pademangan, Jakarta Utara, DKI Jakarta 14430.<br><br>
-            📍 <strong>Kantor Cabang Medan:</strong><br>
-            1A, Perumahan Evergreen Ruko Jl. Amal, Sunggal, Kec. Medan Sunggal, Kota Medan, Sumatra Utara 20127.
-        `;
+            if (panel.classList.contains("hidden")) {
+                panel.classList.remove("hidden");
+                icon.classList.replace("fa-comments", "fa-xmark");
+
+                // Render percakapan awal jika chat box kosong
+                if (chatMessages.innerHTML.trim() === "") {
+                    renderChat("start");
+                }
+            } else {
+                panel.classList.add("hidden");
+                icon.classList.replace("fa-xmark", "fa-comments");
             }
-
-            // 2. Jawaban Kontak / Telepon / Email
-            if (text.includes('kontak') || text.includes('telepon') || text.includes('hp') || text.includes('email') || text.includes('hubungi')) {
-                return `
-            <strong>Informasi Kontak Resmi Cabang Medan:</strong><br>
-            📞 <strong>Telepon:</strong> 082168393279 / 085855671871<br>
-            ✉️ <strong>Email:</strong> ibnu.kamal@hapindo.co.id
-        `;
-            }
-
-            // 3. Jawaban Jam Operasional
-            if (text.includes('jam') || text.includes('operasional') || text.includes('buka') || text.includes('tutup') || text.includes('hari')) {
-                return `
-            <strong>Jam Operasional Kantor Cabang Medan:</strong><br>
-            📅 Senin - Jumat: 07:30 - 16:30 WIB<br>
-            ⚠️ Layanan aktif selama jam operasional kerja.
-        `;
-            }
-
-            // 4. Jawaban Profil / Layanan Perusahaan
-            if (text.includes('profil') || text.includes('haleyora') || text.includes('layanan') || text.includes('usaha') || text.includes('tentang')) {
-                return `
-            <strong>PT Haleyora Powerindo (HPI):</strong><br>
-            Anak perusahaan PLN Group yang bergerak di bidang solusi pengelolaan tenaga kerja dan layanan operasional terintegrasi untuk mendukung keandalan ketenagalistrikan serta bisnis klien.
-        `;
-            }
-
-            // 5. Tanggapan Batasan Informasi (Out of Scope)
-            return `
-        Mohon maaf, saya hanya dikhususkan untuk menjawab pertanyaan seputar <strong>PT HALEYORA POWERINDO</strong>.<br><br>
-        Anda dapat menanyakan hal seperti:<br>
-        • Alamat kantor pusat & cabang Medan<br>
-        • Kontak telepon & email resmi<br>
-        • Jam operasional kantor<br>
-        • Layanan perusahaan
-    `;
         }
 
         // Nama fungsi diubah agar sesuai dengan onclick="loadPendingReports()" di HTML
