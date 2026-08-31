@@ -1915,12 +1915,178 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             class="absolute rounded-full bg-gradient-to-r from-haleyora-orange via-amber-500 to-haleyora-orange transition-all duration-750 ease-out"
             style="width: 50px; height: 50px; transform: translate(-50%, -50%) scale(0);"></span>
     </div>
+    <!-- ================= CHATBOX ASSISTANT HPI ================= -->
+    <div id="hpi-chatbox-container" class="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+        <!-- Chat Window (Disembunyikan secara default) -->
+        <div id="hpi-chat-window"
+            class="hidden w-[340px] mb-4 bg-haleyora-card/95 backdrop-blur-2xl border border-haleyora-sky/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 opacity-0 translate-y-4">
 
+            <!-- Header Chat -->
+            <div
+                class="bg-gradient-to-r from-haleyora-blue to-haleyora-dark p-4 flex justify-between items-center border-b border-haleyora-sky/30">
+                <div class="flex items-center gap-2">
+                    <div
+                        class="w-8 h-8 rounded-full bg-haleyora-sky/20 flex items-center justify-center text-haleyora-sky border border-haleyora-sky/50">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white text-sm">HPI Assistant</h4>
+                        <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Online
+                        </p>
+                    </div>
+                </div>
+                <button type="button" onclick="toggleChatbox()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Area Pesan (Scrollable) -->
+            <div id="hpi-chat-messages"
+                class="h-64 p-4 overflow-y-auto flex flex-col gap-3 bg-haleyora-dark/80 text-xs">
+                <!-- Pesan pembuka dari Bot -->
+                <div class="flex items-start gap-2">
+                    <div
+                        class="w-6 h-6 rounded-full bg-haleyora-sky/20 shrink-0 flex items-center justify-center text-haleyora-sky border border-haleyora-sky/50 text-[10px]">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div
+                        class="bg-haleyora-card border border-haleyora-blue/30 text-slate-200 p-3 rounded-r-xl rounded-bl-xl max-w-[85%] leading-relaxed">
+                        Halo! Saya asisten virtual PT Haleyora Powerindo. Ada yang bisa saya bantu terkait informasi
+                        perusahaan atau web operasional ini?
+                    </div>
+                </div>
+            </div>
+
+            <!-- Area Pilihan Pertanyaan (User hanya bisa klik) -->
+            <div id="hpi-chat-options"
+                class="p-3 bg-[#08182f] border-t border-haleyora-blue/40 grid gap-2 max-h-36 overflow-y-auto">
+                <!-- Tombol pertanyaan akan dimuat via JS -->
+            </div>
+        </div>
+
+        <!-- Tombol Floating Toggle -->
+        <button type="button" onclick="toggleChatbox()" id="btn-toggle-chat"
+            class="bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white w-14 h-14 rounded-full shadow-[0_0_20px_rgba(242,106,33,0.4)] flex items-center justify-center text-2xl transition hover:scale-105 active:scale-95">
+            <i class="fa-solid fa-comments"></i>
+        </button>
+    </div>
 
     <!-- PocketBase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js"></script>
     <!-- SCRIPT JAVASCRIPT UTAMA -->
     <script>
+
+
+        const hpiFaqData = [
+            {
+                id: 1,
+                question: "Apa profil & bisnis utama PT Haleyora Powerindo?",
+                answer: "PT Haleyora Powerindo (HPI) adalah anak perusahaan dari PLN Group (melalui Haleyora Power) yang berfokus pada solusi pengelolaan tenaga kerja terintegrasi, layanan operasional kelistrikan (Yantek), dan manajemen fasilitas untuk mendukung keandalan pasokan listrik serta pertumbuhan bisnis klien."
+            },
+            {
+                id: 2,
+                question: "Apa fungsi utama dari portal web operasional ini?",
+                answer: "Web portal ini dirancang khusus untuk digitalisasi operasional pegawai. Fungsinya mencakup inspeksi kendaraan harian secara digital, pelaporan kondisi komponen kendaraan, pengajuan servis, pelaporan insiden darurat, serta pemantauan status izin berkendara (SIM) dan sertifikasi K3 secara real-time."
+            },
+            {
+                id: 3,
+                question: "Di mana alamat kantor PT Haleyora Powerindo?",
+                answer: "Kami memiliki dua titik lokasi operasional utama:<br><br><b>1. Kantor Pusat:</b><br>Berada di Jakarta Selatan (Gedung Haleyora Power).<br><br><b>2. Cabang Medan:</b><br>Sesuai dengan data referensi image_111393.png, alamat kantor Cabang Medan berada di 1A, Perumahan Evergreen Ruko Jl. Amal, Sunggal, Kec. Medan Sunggal, Kota Medan, Sumatra Utara 20127."
+            },
+            {
+                id: 4,
+                question: "Bagaimana alur verifikasi laporan inspeksi di sistem?",
+                answer: "Setelah Supir/Teknisi mengisi form inspeksi dan mengambil foto via web, data akan masuk ke Dashboard Admin. Administrator (Admin K3/Operasional) akan meninjau kelayakan kendaraan, memverifikasi foto, dan memberikan status setuju atau menolak laporan sebelum unit diizinkan beroperasi."
+            }
+        ];
+
+        const chatWindow = document.getElementById('hpi-chat-window');
+        const chatMessages = document.getElementById('hpi-chat-messages');
+        const chatOptions = document.getElementById('hpi-chat-options');
+        const btnToggle = document.getElementById('btn-toggle-chat');
+        let isChatOpen = false;
+
+        // Fungsi membuka / menutup chatbox
+        function toggleChatbox() {
+            isChatOpen = !isChatOpen;
+            if (isChatOpen) {
+                chatWindow.classList.remove('hidden');
+                setTimeout(() => {
+                    chatWindow.classList.remove('opacity-0', 'translate-y-4');
+                    chatWindow.classList.add('opacity-100', 'translate-y-0');
+                }, 10);
+                btnToggle.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                if (chatOptions.innerHTML === '') renderOptions(); // Render opsi jika masih kosong
+            } else {
+                chatWindow.classList.remove('opacity-100', 'translate-y-0');
+                chatWindow.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => {
+                    chatWindow.classList.add('hidden');
+                }, 300);
+                btnToggle.innerHTML = '<i class="fa-solid fa-comments"></i>';
+            }
+        }
+
+        // Fungsi memuat tombol pilihan pertanyaan
+        function renderOptions() {
+            chatOptions.innerHTML = '';
+            hpiFaqData.forEach(faq => {
+                const btn = document.createElement('button');
+                btn.className = "text-left text-[11px] bg-haleyora-dark hover:bg-haleyora-blue/40 border border-haleyora-blue/50 text-slate-200 px-3 py-2 rounded-lg transition duration-200";
+                btn.innerText = faq.question;
+                btn.onclick = () => handleUserClick(faq);
+                chatOptions.appendChild(btn);
+            });
+        }
+
+        // Fungsi menangani klik pertanyaan oleh user
+        function handleUserClick(faq) {
+            // Hapus sementara opsi agar user fokus membaca
+            chatOptions.innerHTML = '';
+
+            // 1. Munculkan bubble chat pertanyaan user
+            const userHtml = `
+            <div class="flex justify-end gap-2 animate-fade-in-row">
+                <div class="bg-gradient-to-r from-haleyora-orange to-amber-600 text-white p-3 rounded-l-xl rounded-br-xl max-w-[85%] leading-relaxed">
+                    ${faq.question}
+                </div>
+            </div>`;
+            chatMessages.insertAdjacentHTML('beforeend', userHtml);
+            scrollToBottom();
+
+            // 2. Simulasi bot mengetik (delay)
+            const typingId = "typing-" + Date.now();
+            const typingHtml = `
+            <div id="${typingId}" class="flex items-end gap-2 animate-fade-in-row">
+                <div class="w-6 h-6 rounded-full bg-haleyora-sky/20 shrink-0 flex items-center justify-center text-haleyora-sky border border-haleyora-sky/50 text-[10px]"><i class="fa-solid fa-robot"></i></div>
+                <div class="bg-haleyora-card border border-haleyora-blue/30 text-haleyora-sky p-3 rounded-r-xl rounded-bl-xl">
+                    <i class="fa-solid fa-ellipsis fa-fade"></i>
+                </div>
+            </div>`;
+            chatMessages.insertAdjacentHTML('beforeend', typingHtml);
+            scrollToBottom();
+
+            // 3. Munculkan jawaban Bot
+            setTimeout(() => {
+                document.getElementById(typingId).remove(); // Hapus indikator mengetik
+                const botHtml = `
+                <div class="flex items-start gap-2 animate-fade-in-row">
+                    <div class="w-6 h-6 rounded-full bg-haleyora-sky/20 shrink-0 flex items-center justify-center text-haleyora-sky border border-haleyora-sky/50 text-[10px]"><i class="fa-solid fa-robot"></i></div>
+                    <div class="bg-haleyora-card border border-haleyora-blue/30 text-slate-200 p-3 rounded-r-xl rounded-bl-xl max-w-[85%] leading-relaxed">
+                        ${faq.answer}
+                    </div>
+                </div>`;
+                chatMessages.insertAdjacentHTML('beforeend', botHtml);
+                scrollToBottom();
+
+                // Render kembali opsi pertanyaan
+                renderOptions();
+            }, 800);
+        }
+
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
 
 
 
