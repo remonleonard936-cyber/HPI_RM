@@ -563,11 +563,64 @@
         .slide-in-right {
             animation: slideInFromRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+
+        .dynamic-island {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.6);
+            background: #0a0a0a;
+            color: #fff;
+            border-radius: 999px;
+            padding: 0 18px;
+            height: 0;
+            max-width: 90vw;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            opacity: 0;
+            z-index: 9999;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+            transition: height 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease,
+                transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+        }
+
+        .dynamic-island.notif-tampil {
+            height: 44px;
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .dynamic-island.notif-keluar {
+            height: 0;
+            opacity: 0;
+            transform: translateX(-50%) scale(0.7);
+        }
+
+        .dynamic-island i {
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .dynamic-island span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
 </head>
 
 <body
     class="bg-haleyora-dark text-slate-100 min-h-screen flex flex-col selection:bg-haleyora-orange selection:text-white">
+    <div id="dynamic-island-notif" class="dynamic-island">
+        <i id="dynamic-island-icon" class="fa-solid fa-circle-info"></i>
+        <span id="dynamic-island-text"></span>
+    </div>
     <!-- NAVBAR / HEADER UTAMA -->
     <header class="sticky top-0 z-50 glass-dark border-b border-haleyora-blue/30 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1382,6 +1435,14 @@ border-haleyora-blue/30 space-y-1">
                     <div class="p-4 rounded-2xl bg-haleyora-dark/60 border border-haleyora-blue/30 space-y-1">
                         <span class="text-slate-400 uppercase font-semibold">Lokasi Penugasan</span>
                         <p class="text-sm font-bold text-white">Kantor Cabang Medan, Sunggal</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-haleyora-dark/60 border border-haleyora-blue/30 space-y-2">
+                        <span class="text-xs font-bold text-white block">Impor Akun dari Excel</span>
+                        <p class="text-[11px] text-slate-400">Kolom: A=NIP, B=Nama, C=Lokasi Kerja. Foto wajah
+                            (opsional) ditempel langsung di sel kolom D.</p>
+                        <input type="file" id="input-excel-akun" accept=".xlsx" onchange="importAkunDariExcel(event)"
+                            class="text-xs text-slate-300">
+                        <p id="status-import-excel" class="text-xs text-haleyora-sky"></p>
                     </div>
                 </div>
 
@@ -2532,6 +2593,36 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             return Array.isArray(v) ? v[0] : v;
         }
 
+        let notifTimeout = null;
+        function notifDinamis(pesan, tipe) {
+            if (!tipe) {
+                if (/gagal|error|tidak (bisa|valid|ditemukan)/i.test(pesan)) tipe = 'error';
+                else if (/berhasil|diterima|dikirim|disimpan|dihapus/i.test(pesan)) tipe = 'sukses';
+                else tipe = 'info';
+            }
+            const konfig = {
+                sukses: { warna: '#10b981', ikon: 'fa-circle-check' },
+                error: { warna: '#f43f5e', ikon: 'fa-circle-exclamation' },
+                info: { warna: '#0ea5e9', ikon: 'fa-circle-info' },
+            };
+            const c = konfig[tipe];
+
+            const notif = document.getElementById('dynamic-island-notif');
+            document.getElementById('dynamic-island-text').textContent = pesan;
+            const icon = document.getElementById('dynamic-island-icon');
+            icon.className = `fa-solid ${c.ikon}`;
+            icon.style.color = c.warna;
+
+            clearTimeout(notifTimeout);
+            notif.classList.remove('notif-keluar');
+            notif.classList.add('notif-tampil');
+
+            notifTimeout = setTimeout(() => {
+                notif.classList.remove('notif-tampil');
+                notif.classList.add('notif-keluar');
+            }, 3500);
+        }
+
         // Ambil URL file PocketBase dengan header anti-warning ngrok, lalu tempel ke elemen <img>
         async function pasangFotoAman(imgElement, record, filename) {
             if (!filename) return;
@@ -3049,8 +3140,8 @@ rounded-xl font-bold transition">Batal</button>
 
                 // Validasi kata sandi (Berdasarkan gambar, sandi disamakan dengan NIP-nya yaitu "2009")
                 // Jika ingin menggunakan logika lain, pastikan mencocokkan variabel di sini.
-                if (inputPassword !== user.nip) {
-                    alert("Login gagal! Kata sandi salah.");
+                if (inputPassword !== (user.nip || '').slice(-4)) {
+                    notifDinamis("Login gagal! Kata sandi salah.", 'error');
                     return;
                 }
 
@@ -3438,12 +3529,6 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
         </tr>`;
                 });
                 records.items.forEach(item => {
-                    if (item.foto_servis) {
-                        const el = document.getElementById(`foto-servis-${item.id}`);
-                        if (el) pasangFotoAman(el, item, item.foto_servis);
-                    }
-                });
-                records.items.forEach(item => {
                     if (item.foto_kecelakaan) {
                         const el = document.getElementById(`foto-kcl-${item.id}`);
                         if (el) pasangFotoAman(el, item, item.foto_kecelakaan);
@@ -3701,6 +3786,73 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             }
         }
 
+        async function importAkunDariExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const statusEl = document.getElementById('status-import-excel');
+            statusEl.textContent = 'Membaca file Excel...';
+
+            try {
+                const buffer = await file.arrayBuffer();
+                const workbook = new ExcelJS.Workbook();
+                await workbook.xlsx.load(buffer);
+                const sheet = workbook.worksheets[0];
+
+                // Petakan foto yang ditempel di sel, berdasarkan baris tempatnya berada
+                const gambarPerBaris = {};
+                sheet.getImages().forEach(gbr => {
+                    const barisExcel = Math.round(gbr.range.tl.row) + 1;
+                    const media = workbook.model.media.find(m => m.index === gbr.imageId);
+                    if (media) gambarPerBaris[barisExcel] = media;
+                });
+
+                let berhasil = 0, gagal = 0, dilewati = 0;
+                const daftarError = [];
+
+                for (let i = 2; i <= sheet.rowCount; i++) {
+                    const row = sheet.getRow(i);
+                    const nip = String(row.getCell(1).value || '').trim();
+                    const nama = String(row.getCell(2).value || '').trim();
+                    const lokasiKerja = String(row.getCell(3).value || '').trim();
+                    if (!nip || !nama) continue;
+
+                    try {
+                        const cekAda = await pb.collection('user1').getList(1, 1, { filter: `nip = "${nip}"`, requestKey: null });
+                        if (cekAda.items.length > 0) { dilewati++; continue; }
+
+                        const formDataUser = new FormData();
+                        formDataUser.append('nip', nip);
+                        formDataUser.append('nama', nama);
+                        formDataUser.append('lokasi_kerja', lokasiKerja);
+                        formDataUser.append('role', 'user');
+
+                        const gambar = gambarPerBaris[i];
+                        if (gambar) {
+                            const ext = gambar.extension || 'png';
+                            const blob = new Blob([gambar.buffer], { type: `image/${ext}` });
+                            formDataUser.append('foto_wajah', blob, `foto_${nip}.${ext}`);
+                        }
+
+                        await pb.collection('user1').create(formDataUser, { requestKey: null });
+                        berhasil++;
+                    } catch (errBaris) {
+                        gagal++;
+                        daftarError.push(`Baris ${i} (NIP ${nip}): ${errBaris?.message || 'gagal disimpan'}`);
+                    }
+                }
+
+                let ringkasan = `Impor selesai. Berhasil: ${berhasil}, Dilewati (NIP sudah ada): ${dilewati}, Gagal: ${gagal}.`;
+                console.log(daftarError.join('\n'));
+                notifDinamis(ringkasan, gagal > 0 ? 'error' : 'sukses');
+                statusEl.textContent = '';
+                event.target.value = '';
+            } catch (error) {
+                console.error('Gagal membaca file Excel:', error);
+                notifDinamis('Gagal membaca file Excel. Pastikan formatnya benar.', 'error');
+                statusEl.textContent = '';
+            }
+        }
+
         async function hapusLaporan(id, koleksi) {
             if (!confirm('Yakin ingin menghapus laporan ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) return;
             try {
@@ -3716,37 +3868,19 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
         }
 
         async function terimaEditRevisi(edit1Id) {
-            if (!confirm('Terima data revisi ini dan gabungkan ke laporan asli?')) return;
+            if (!confirm('Terima data revisi ini?')) return;
             try {
                 const edit = await pb.collection('edit1').getOne(edit1Id);
                 const idAsli = idTunggal(edit.laporan_asli_id);
 
-                // Karena edit1 sekarang sudah lengkap (bukan cuma yang berubah), salin langsung semua field teks & checklist
-                const dataUpdate = {
-                    status: 'selesai', catatan_admin: '', target_revisi: [], notif_dibaca: false,
-                    supir: edit.supir, jenis_kendaraan: edit.jenis_kendaraan, nopol: edit.nopol,
-                    no_rangka: edit.no_rangka, masa_aktif_stnk: edit.masa_aktif_stnk,
-                    masa_aktif_kir: edit.masa_aktif_kir, masa_aktif_sim: edit.masa_aktif_sim,
-                    checklist: edit.checklist
-                };
-                await pb.collection('laporan').update(idAsli, dataUpdate);
-
-                // Salin semua foto dari edit1 ke laporan asli (edit1 sudah lengkap 7 foto)
-                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
-                for (const fotoId of daftarFotoId) {
-                    const namaField = `foto_${fotoId}`;
-                    if (edit[namaField]) {
-                        const urlLama = pb.files.getUrl(edit, edit[namaField]);
-                        const resFoto = await fetch(urlLama, { headers: { 'ngrok-skip-browser-warning': 'true' } });
-                        const blob = await resFoto.blob();
-                        const fd = new FormData();
-                        fd.append(namaField, blob, edit[namaField]);
-                        await pb.collection('laporan').update(idAsli, fd);
-                    }
+                if (idAsli) {
+                    await pb.collection('laporan').update(idAsli, {
+                        status: 'selesai', catatan_admin: '', target_revisi: [], notif_dibaca: false
+                    });
                 }
 
                 await pb.collection('edit1').update(edit1Id, { status_edit: 'diterima' });
-                alert('Data revisi diterima & digabungkan ke laporan asli.');
+                alert('Data revisi diterima.');
                 loadPendingReports();
                 updateAdminStats();
             } catch (error) {
