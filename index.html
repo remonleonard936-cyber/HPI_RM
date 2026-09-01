@@ -632,6 +632,22 @@
             z-index: 1;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
+
+        #login-reveal-wrapper {
+            transform: translateY(-120vh);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+        }
+
+        #login-reveal-wrapper.panel-tampil {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        #login-reveal-wrapper.panel-keluar {
+            transform: translateY(-120vh);
+            opacity: 0;
+        }
     </style>
 </head>
 
@@ -828,53 +844,58 @@
                 <div class="bg-[#0b1329] border border-slate-700/60 rounded-2xl p-8 ...">
                     <!-- Isi form login Anda (Username, Kata Sandi, Tombol Masuk, dll) -->
                     <div
-                        class="w-full max-w-md bg-haleyora-card/90 border border-haleyora-sky/30 rounded-3xl p-8 shadow-2xl backdrop-blur-2xl space-y-6">
-                        <div class="text-center space-y-3">
-                            <img src="p1.jpg" alt="Logo Haleyora Powerindo" class="h-16 mx-auto object-contain"
-                                onerror="this.src='https://via.placeholder.com/150x50?text=Haleyora+Powerindo'">
-                            <h2 class="text-2xl font-extrabold text-white">Selamat Datang</h2>
-                            <p class="text-xs text-slate-400">Masukkan NIP atau Username Akun Anda</p>
+                        class="w-full max-w-md bg-white/10 border border-white/25 rounded-3xl p-8 shadow-2xl backdrop-blur-2xl space-y-6 relative overflow-hidden">
+                        <div
+                            class="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/20 to-transparent">
+
+                            <div class="text-center space-y-3">
+                                <img src="p1.jpg" alt="Logo Haleyora Powerindo" class="h-16 mx-auto object-contain"
+                                    onerror="this.src='https://via.placeholder.com/150x50?text=Haleyora+Powerindo'">
+                                <h2 class="text-2xl font-extrabold text-white">Selamat Datang</h2>
+                                <p class="text-xs text-slate-400">Masukkan NIP atau Username Akun Anda</p>
+                            </div>
+                            <form onsubmit="handleUnifiedLogin(event)" class="space-y-4">
+                                <div>
+                                    <label
+                                        class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Username
+                                        / NIP</label>
+                                    <div class="relative">
+                                        <i
+                                            class="fa-solid fa-id-card absolute left-4 top-3.5 text-slate-500 text-sm"></i>
+                                        <input type="text" id="login-id" required
+                                            class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
+                                            placeholder="Username">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Kata
+                                        Sandi</label>
+                                    <div class="relative">
+                                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-500 text-sm"></i>
+                                        <input type="password" id="login-password" required
+                                            class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-11 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
+                                            placeholder="Kata Sandi">
+                                        <button type="button" onclick="togglePasswordVisibility()"
+                                            class="absolute right-4 top-3.5 text-slate-400 hover:text-haleyora-orange focus:outline-none transition">
+                                            <i id="toggle-password-icon" class="fa-solid fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <label class="flex items-center space-x-2 text-slate-400 cursor-pointer">
+                                        <input type="checkbox"
+                                            class="rounded bg-haleyora-dark border-haleyora-blue text-haleyora-orange focus:ring-0">
+                                        <span>Ingat saya</span>
+                                    </label>
+                                    <a href="#" class="text-haleyora-orange hover:underline">Lupa password?</a>
+                                </div>
+                                <button type="submit" id="btn-kirim-inspeksi"
+                                    class="w-full bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-haleyora-orange/25 active:scale-95">
+                                    Masuk
+                                </button>
+                            </form>
                         </div>
-                        <form onsubmit="handleUnifiedLogin(event)" class="space-y-4">
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Username
-                                    / NIP</label>
-                                <div class="relative">
-                                    <i class="fa-solid fa-id-card absolute left-4 top-3.5 text-slate-500 text-sm"></i>
-                                    <input type="text" id="login-id" required
-                                        class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
-                                        placeholder="Username">
-                                </div>
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Kata
-                                    Sandi</label>
-                                <div class="relative">
-                                    <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-500 text-sm"></i>
-                                    <input type="password" id="login-password" required
-                                        class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-11 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
-                                        placeholder="Kata Sandi">
-                                    <button type="button" onclick="togglePasswordVisibility()"
-                                        class="absolute right-4 top-3.5 text-slate-400 hover:text-haleyora-orange focus:outline-none transition">
-                                        <i id="toggle-password-icon" class="fa-solid fa-eye"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between text-xs">
-                                <label class="flex items-center space-x-2 text-slate-400 cursor-pointer">
-                                    <input type="checkbox"
-                                        class="rounded bg-haleyora-dark border-haleyora-blue text-haleyora-orange focus:ring-0">
-                                    <span>Ingat saya</span>
-                                </label>
-                                <a href="#" class="text-haleyora-orange hover:underline">Lupa password?</a>
-                            </div>
-                            <button type="submit" id="btn-kirim-inspeksi"
-                                class="w-full bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-haleyora-orange/25 active:scale-95">
-                                Masuk
-                            </button>
-                        </form>
                     </div>
                 </div>
 
@@ -1458,8 +1479,9 @@ border-haleyora-blue/30 space-y-1">
                     </div>
                     <div class="p-4 rounded-xl bg-haleyora-dark/60 border border-haleyora-blue/30 space-y-2">
                         <span class="text-xs font-bold text-white block">Impor Akun dari Excel</span>
-                        <p class="text-[11px] text-slate-400">Kolom: A=NIP, B=Nama, C=Lokasi Kerja. Foto wajah
-                            (opsional) ditempel langsung di sel kolom D.</p>
+                        <p class="text-[11px] text-slate-400">Kolom: A=Foto Driver (SIM), B=Foto Wajah, C=Nama, D=No
+                            KTP, E=Tanggal Lahir, F=Unit PLN.</p>
+                        (opsional) ditempel langsung di sel kolom D.</p>
                         <input type="file" id="input-excel-akun" accept=".xlsx" onchange="importAkunDariExcel(event)"
                             class="text-xs text-slate-300">
                         <p id="status-import-excel" class="text-xs text-haleyora-sky"></p>
@@ -1481,11 +1503,10 @@ border-haleyora-blue/30 space-y-1">
         </section>
 
         <!-- ================= HALAMAN VERIFIKASI ADMIN ================= -->
-        <section id="admin-verifikasi" class="hidden max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+        <section id="admin-verifikasi" class="hidden max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
             <div class="bg-haleyora-card/90 border border-haleyora-blue/50 rounded-3xl p-8 shadow-2xl space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Data Laporan & Verifikasi Admin</h2>
                         <div class="flex gap-2 mb-4">
                             <button id="tab-inspeksi" onclick="gantiTabAdmin('inspeksi')"
                                 class="px-4 py-2 rounded-xl text-xs font-bold bg-haleyora-blue text-white transition">Inspeksi
@@ -1500,13 +1521,7 @@ border-haleyora-blue/30 space-y-1">
 border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                         </div>
                     </div>
-                    <p class="text-xs text-slate-400">Kelola data inspeksi, pendaftaran servis, serta insiden
-                        kecelakaan.</p>
                 </div>
-                <button onclick="showSection('admin-dashboard')"
-                    class="bg-haleyora-blue/30 hover:bg-haleyora-blue/50 text-white px-4 py-2 rounded-xl text-xs font-semibold transition border border-haleyora-blue/40">
-                    Kembali ke Dashboard
-                </button>
             </div>
             <div class="overflow-x-auto pt-4">
                 <div id="wrapper-tabel-inspeksi">
@@ -2778,6 +2793,14 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             });
         }
 
+        function hitungPasswordDariTanggalLahir(tglLahir) {
+            if (!tglLahir) return null;
+            const bagian = String(tglLahir).split('-'); // format "1968-12-27" -> [tahun, bulan, hari]
+            if (bagian.length !== 3) return null;
+            const [tahun, bulan, hari] = bagian;
+            return `${tahun}${hari}${bulan}`; // contoh: 1968-12-27 -> "19682712"
+        }
+
         function idTunggal(v) {
             return Array.isArray(v) ? v[0] : v;
         }
@@ -2834,55 +2857,21 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
 
 
         function triggerWaveReveal(event) {
-            const btn = event.currentTarget;
-            const rect = btn.getBoundingClientRect();
-
-            // 1. Mendapatkan titik pusat posisi tombol Login di layar
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-
-            const overlay = document.getElementById('screen-liquid-overlay');
-            const circle = document.getElementById('liquid-wave-circle');
             const loginWrapper = document.getElementById('login-reveal-wrapper');
-
-            // Tampilkan section login terlebih dahulu agar elemen card siap di DOM
-            showSection('login-section'); // Sesuaikan dengan fungsi perpindahan section Anda
-
-            // 2. Set posisi awal riak air dan clip-path card tepat di titik tombol Login (ukuran 0px)
-            circle.style.left = x + 'px';
-            circle.style.top = y + 'px';
-            circle.style.transform = 'translate(-50%, -50%) scale(0)';
-
-            loginWrapper.style.transition = 'none'; // Matikan transisi sesaat untuk reset posisi
-            loginWrapper.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-
-            // Aktifkan overlay transisi
-            overlay.classList.add('active');
-
-            // Beri jeda kecil agar DOM mereset, lalu nyalakan kembali transisinya
-            setTimeout(() => {
-                loginWrapper.style.transition = 'clip-path 0.75s cubic-bezier(0.77, 0, 0.175, 1)';
-
-                // 3. Jalankan ekspansi secara bersamaan:
-                // - Gelombang oranye membesar menutupi layar (scale 45)
-                circle.style.transform = 'translate(-50%, -50%) scale(45)';
-
-                // - Radius clip-path card membesar hingga 1800px dari titik tombol Login.
-                // Kotak di tengah akan otomatis tersingkap/muncul perlahan begitu lingkaran gelombang melewatinya!
-                loginWrapper.style.clipPath = `circle(1800px at ${x}px ${y}px)`;
-            }, 40);
-
-            // 4. Setelah gelombang selesai menyebar (~750ms), sembunyikan warna latar oranye 
-            // dan biarkan card login di tengah terbuka sepenuhnya dengan normal
-            setTimeout(() => {
-                overlay.classList.remove('active');
-                circle.style.transform = 'translate(-50%, -50%) scale(0)';
-
-                // Hapus clipPath agar card login kembali ke kondisi CSS aslinya secara penuh
-                loginWrapper.style.clipPath = 'none';
-            }, 780);
+            showSection('login-section');
+            loginWrapper.classList.remove('panel-keluar', 'panel-tampil');
+            void loginWrapper.offsetWidth; // paksa browser "reset" dulu sebelum animasi baru
+            requestAnimationFrame(() => {
+                loginWrapper.classList.add('panel-tampil');
+            });
         }
 
+        function naikkanPanelLogin(callback) {
+            const loginWrapper = document.getElementById('login-reveal-wrapper');
+            loginWrapper.classList.remove('panel-tampil');
+            loginWrapper.classList.add('panel-keluar');
+            setTimeout(() => { if (callback) callback(); }, 550);
+        }
 
         let currentMorphIndex = 1;
         function updateMorphOnScroll() {
@@ -3216,6 +3205,7 @@ rounded-xl font-bold transition">Batal</button>
             if (sectionId === 'admin-dashboard') updateAdminStats();
             if (sectionId === 'admin-verifikasi') loadPendingReports();
             if (sectionId === 'izin-berkendara') checkUserNotifications();
+            if (sectionId === 'status-izin') checkUserNotifications();
         }
 
         function scrollToSection(id) {
@@ -3329,36 +3319,40 @@ rounded-xl font-bold transition">Batal</button>
 
                 // Validasi kata sandi (Berdasarkan gambar, sandi disamakan dengan NIP-nya yaitu "2009")
                 // Jika ingin menggunakan logika lain, pastikan mencocokkan variabel di sini.
-                if (inputPassword !== (user.nip || '').slice(-4)) {
+                if (inputPassword !== hitungPasswordDariTanggalLahir(user.tanggal_lahir)) {
                     notifDinamis("Login gagal! Kata sandi salah.", 'error');
                     return;
                 }
 
                 // Jika lolos, simpan data user yang sedang login
                 currentUser = user;
-                resetFormInspeksiState(); // BARU: pastikan form inspeksi bersih di setiap sesi login baru
+                resetFormInspeksiState();
+                const chatbox = document.getElementById('hpi-chatbox-container');
+                if (chatbox) chatbox.classList.add('hidden'); // BARU: pastikan form inspeksi bersih di setiap sesi login baru
 
                 // Routing berdasarkan Role
-                if (currentUser.role === 'admin') {
-                    document.getElementById('public-nav').classList.add('hidden');
-                    document.getElementById('admin-nav').classList.remove('hidden');
-                    document.getElementById('admin-nav').classList.add('flex');
-                    tampilkanFotoProfil();
-                    showSection('admin-dashboard');
-                } else {
-                    document.getElementById('public-nav').classList.add('hidden');
-                    document.getElementById('user-nav').classList.remove('hidden');
-                    document.getElementById('user-nav').classList.add('flex');
+                naikkanPanelLogin(() => {
+                    if (currentUser.role === 'admin') {
+                        document.getElementById('public-nav').classList.add('hidden');
+                        document.getElementById('admin-nav').classList.remove('hidden');
+                        document.getElementById('admin-nav').classList.add('flex');
+                        tampilkanFotoProfil();
+                        showSection('admin-dashboard');
+                    } else {
+                        document.getElementById('public-nav').classList.add('hidden');
+                        document.getElementById('user-nav').classList.remove('hidden');
+                        document.getElementById('user-nav').classList.add('flex');
 
-                    const navUsername = document.getElementById('nav-username');
-                    if (navUsername) navUsername.textContent = currentUser.nama || currentUser.nip;
+                        const navUsername = document.getElementById('nav-username');
+                        if (navUsername) navUsername.textContent = currentUser.nama || currentUser.nip;
 
-                    tampilkanFotoProfil();
-                    showSection('status-izin');
-                    if (typeof cekStatusRevisiUser === 'function') {
-                        cekStatusRevisiUser();
+                        tampilkanFotoProfil();
+                        showSection('status-izin');
+                        if (typeof cekStatusRevisiUser === 'function') {
+                            cekStatusRevisiUser();
+                        }
                     }
-                }
+                });
 
                 // Menampilkan nama user di navigasi
             } catch (error) {
@@ -3979,7 +3973,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             const file = event.target.files[0];
             if (!file) return;
             const statusEl = document.getElementById('status-import-excel');
-            statusEl.textContent = 'Membaca file Excel...';
+            statusEl.textContent = 'Membaca file Excel... (bisa makan waktu 1-2 menit untuk data banyak)';
 
             try {
                 const buffer = await file.arrayBuffer();
@@ -3987,12 +3981,12 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 await workbook.xlsx.load(buffer);
                 const sheet = workbook.worksheets[0];
 
-                // Petakan foto yang ditempel di sel, berdasarkan baris tempatnya berada
-                const gambarPerBaris = {};
+                const gambarPerSel = {};
                 sheet.getImages().forEach(gbr => {
-                    const barisExcel = Math.round(gbr.range.tl.row) + 1;
+                    const baris = Math.round(gbr.range.tl.row) + 1;
+                    const kolom = Math.round(gbr.range.tl.col) + 1;
                     const media = workbook.model.media.find(m => m.index === gbr.imageId);
-                    if (media) gambarPerBaris[barisExcel] = media;
+                    if (media) gambarPerSel[`${baris}-${kolom}`] = media;
                 });
 
                 let berhasil = 0, gagal = 0, dilewati = 0;
@@ -4000,10 +3994,13 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
                 for (let i = 2; i <= sheet.rowCount; i++) {
                     const row = sheet.getRow(i);
-                    const nip = String(row.getCell(1).value || '').trim();
-                    const nama = String(row.getCell(2).value || '').trim();
-                    const lokasiKerja = String(row.getCell(3).value || '').trim();
-                    if (!nip || !nama) continue;
+                    const nama = String(row.getCell(3).value || '').trim();               // C = Nama
+                    const nip = String(row.getCell(4).value || '').replace(/^'/, '').trim(); // D = No KTP
+                    let tglRaw = row.getCell(5).value;                                    // E = Tanggal Lahir
+                    let tglLahir = tglRaw instanceof Date ? tglRaw.toISOString().slice(0, 10) : String(tglRaw || '').trim();
+                    const lokasiKerja = String(row.getCell(6).value || '').trim();        // F = Unit PLN
+
+                    if (!nama || !nip) continue;
 
                     try {
                         const cekAda = await pb.collection('user1').getList(1, 1, { filter: `nip = "${nip}"`, requestKey: null });
@@ -4013,20 +4010,25 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                         formDataUser.append('nip', nip);
                         formDataUser.append('nama', nama);
                         formDataUser.append('lokasi_kerja', lokasiKerja);
+                        formDataUser.append('tanggal_lahir', tglLahir);
                         formDataUser.append('role', 'user');
 
-                        const gambar = gambarPerBaris[i];
-                        if (gambar) {
-                            const ext = gambar.extension || 'png';
-                            const blob = new Blob([gambar.buffer], { type: `image/${ext}` });
-                            formDataUser.append('foto_wajah', blob, `foto_${nip}.${ext}`);
+                        const fotoSim = gambarPerSel[`${i}-1`];   // kolom A = Foto Driver -> foto SIM
+                        if (fotoSim) {
+                            const ext = fotoSim.extension || 'png';
+                            formDataUser.append('foto_sim', new Blob([fotoSim.buffer], { type: `image/${ext}` }), `sim_${nip}.${ext}`);
+                        }
+                        const fotoWajah = gambarPerSel[`${i}-2`];  // kolom B = Foto Wajah
+                        if (fotoWajah) {
+                            const ext = fotoWajah.extension || 'png';
+                            formDataUser.append('foto_wajah', new Blob([fotoWajah.buffer], { type: `image/${ext}` }), `wajah_${nip}.${ext}`);
                         }
 
                         await pb.collection('user1').create(formDataUser, { requestKey: null });
                         berhasil++;
                     } catch (errBaris) {
                         gagal++;
-                        daftarError.push(`Baris ${i} (NIP ${nip}): ${errBaris?.message || 'gagal disimpan'}`);
+                        daftarError.push(`Baris ${i} (${nama}): ${errBaris?.message || 'gagal disimpan'}`);
                     }
                 }
 
@@ -4284,8 +4286,9 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
         // Fungsi untuk memproses aksi keluar (logout)
         function logout() {
-            resetFormInspeksiState(); // BARU: bersihkan sisa status revisi sebelum logout
-            // 1. Hapus sesi autentikasi dari PocketBase (karena kamu memakai SDK PocketBase)
+            resetFormInspeksiState();
+            const chatbox = document.getElementById('hpi-chatbox-container');
+            if (chatbox) chatbox.classList.remove('hidden');
             if (typeof pb !== 'undefined') {
                 pb.authStore.clear();
             }
