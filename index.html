@@ -4045,7 +4045,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 event.target.value = '';
             } catch (error) {
                 console.error('Gagal membaca file Excel:', error);
-                notifDinamis('Gagal membaca file Excel. Pastikan formatnya benar.', 'error');
+                notifDinamis('Gagal membaca file Excel: ' + (error?.message || 'Format tidak dikenali.'), 'error');
                 statusEl.textContent = '';
             }
         }
