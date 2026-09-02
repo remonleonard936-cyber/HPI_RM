@@ -34,6 +34,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- Export Excel (ExcelJS - mendukung gambar/foto di dalam sel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>fimportAkunDariExcel
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -3975,6 +3976,47 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             }
         }
 
+        async function perbaikiNamespaceGambarExcel(buffer) {
+            const DAFTAR_TAG = [
+                'wsDr', 'oneCellAnchor', 'twoCellAnchor', 'absoluteAnchor', 'from', 'to', 'pos', 'ext',
+                'col', 'colOff', 'row', 'rowOff', 'pic', 'nvPicPr', 'cNvPr', 'cNvPicPr', 'blipFill', 'spPr',
+                'clientData', 'sp', 'nvSpPr', 'grpSp', 'nvGrpSpPr', 'grpSpPr', 'graphicFrame', 'nvGraphicFramePr'
+            ];
+
+            function perbaikiXml(xml) {
+                let hasil = xml.replace(
+                    /xmlns="http:\/\/schemas\.openxmlformats\.org\/drawingml\/2006\/spreadsheetDrawing"/,
+                    'xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"'
+                );
+                DAFTAR_TAG.forEach(tag => {
+                    const re = new RegExp(`<(/?)${tag}(?=[\\s/>])`, 'g');
+                    hasil = hasil.replace(re, `<$1xdr:${tag}`);
+                });
+                return hasil;
+            }
+
+            try {
+                const zip = await JSZip.loadAsync(buffer);
+                const namaDrawing = Object.keys(zip.files).filter(n => /^xl\/drawings\/drawing\d+\.xml$/.test(n));
+                if (namaDrawing.length === 0) return buffer;
+
+                let adaPerbaikan = false;
+                for (const nama of namaDrawing) {
+                    const isiLama = await zip.file(nama).async('string');
+                    if (isiLama.includes('xmlns="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"')) {
+                        zip.file(nama, perbaikiXml(isiLama));
+                        adaPerbaikan = true;
+                    }
+                }
+                if (!adaPerbaikan) return buffer; // sudah format standar, tidak perlu ditambal
+
+                return await zip.generateAsync({ type: 'arraybuffer' });
+            } catch (err) {
+                console.warn('Gagal menambal namespace gambar, lanjut pakai file asli:', err);
+                return buffer;
+            }
+        }
+
         async function importAkunDariExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -3982,18 +4024,26 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             statusEl.textContent = 'Membaca file Excel... (bisa makan waktu 1-2 menit untuk data banyak)';
 
             try {
-                const buffer = await file.arrayBuffer();
+                let buffer = await file.arrayBuffer();
+                buffer = await perbaikiNamespaceGambarExcel(buffer);
                 const workbook = new ExcelJS.Workbook();
                 await workbook.xlsx.load(buffer);
                 const sheet = workbook.worksheets[0];
 
-                const gambarPerSel = {};
-                sheet.getImages().forEach(gbr => {
-                    const baris = Math.round(gbr.range.tl.row) + 1;
-                    const kolom = Math.round(gbr.range.tl.col) + 1;
-                    const media = workbook.model.media.find(m => m.index === gbr.imageId);
-                    if (media) gambarPerSel[`${baris}-${kolom}`] = media;
-                });
+                let gambarPerSel = {};
+                let fotoBerhasilDibaca = true;
+                try {
+                    sheet.getImages().forEach(gbr => {
+                        const baris = Math.round(gbr.range.tl.row) + 1;
+                        const kolom = Math.round(gbr.range.tl.col) + 1;
+                        const media = workbook.model.media.find(m => m.index === gbr.imageId);
+                        if (media) gambarPerSel[`${baris}-${kolom}`] = media;
+                    });
+                } catch (errGambar) {
+                    console.warn('Gagal membaca foto dari Excel (kemungkinan format gambar terbaru belum didukung). Impor akan tetap lanjut TANPA foto.', errGambar);
+                    gambarPerSel = {};
+                    fotoBerhasilDibaca = false;
+                }
 
                 let berhasil = 0, gagal = 0, dilewati = 0;
                 const daftarError = [];
@@ -4039,6 +4089,9 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 }
 
                 let ringkasan = `Impor selesai. Berhasil: ${berhasil}, Dilewati (NIP sudah ada): ${dilewati}, Gagal: ${gagal}.`;
+                if (!fotoBerhasilDibaca) {
+                    ringkasan += ' (Catatan: foto TIDAK ikut terimpor karena format gambar di Excel ini belum didukung.)';
+                }
                 console.log(daftarError.join('\n'));
                 notifDinamis(ringkasan, gagal > 0 ? 'error' : 'sukses');
                 statusEl.textContent = '';
