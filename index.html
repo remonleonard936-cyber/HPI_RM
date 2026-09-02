@@ -845,8 +845,7 @@
 
         <!-- ================= FORM LOGIN UNIFIED ================= -->
         <section id="login-section" class="hidden min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-12">
-            <div id="login-reveal-wrapper"
-                style="clip-path: circle(0px at 50% 50%); transition: clip-path 0.75s cubic-bezier(0.77, 0, 0.175, 1);">
+            <div id="login-reveal-wrapper">
 
                 <!-- === KOTAK / CARD LOGIN ANDA YANG SUDAH ADA === -->
                 <div class="bg-[#0b1329] border border-slate-700/60 rounded-2xl p-8 ...">
@@ -2034,7 +2033,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     chatWindow.classList.add('opacity-100', 'translate-y-0');
                 }, 10);
                 btnToggle.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-                if (chatOptions.innerHTML === '') renderOptions(); // Render opsi jika masih kosong
+                renderOptions(); // Render opsi jika masih kosong
             } else {
                 chatWindow.classList.remove('opacity-100', 'translate-y-0');
                 chatWindow.classList.add('opacity-0', 'translate-y-4');
