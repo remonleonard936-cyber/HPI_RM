@@ -648,6 +648,14 @@
             transform: translateY(-120vh);
             opacity: 0;
         }
+
+        .login-glass-shine::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 50%);
+            pointer-events: none;
+        }
     </style>
 </head>
 
@@ -845,57 +853,52 @@
                     <!-- Isi form login Anda (Username, Kata Sandi, Tombol Masuk, dll) -->
                     <div
                         class="w-full max-w-md bg-white/10 border border-white/25 rounded-3xl p-8 shadow-2xl backdrop-blur-2xl space-y-6 relative overflow-hidden">
-                        <div
-                            class="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/20 to-transparent">
-
-                            <div class="text-center space-y-3">
-                                <img src="p1.jpg" alt="Logo Haleyora Powerindo" class="h-16 mx-auto object-contain"
-                                    onerror="this.src='https://via.placeholder.com/150x50?text=Haleyora+Powerindo'">
-                                <h2 class="text-2xl font-extrabold text-white">Selamat Datang</h2>
-                                <p class="text-xs text-slate-400">Masukkan NIP atau Username Akun Anda</p>
-                            </div>
-                            <form onsubmit="handleUnifiedLogin(event)" class="space-y-4">
-                                <div>
-                                    <label
-                                        class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Username
-                                        / NIP</label>
-                                    <div class="relative">
-                                        <i
-                                            class="fa-solid fa-id-card absolute left-4 top-3.5 text-slate-500 text-sm"></i>
-                                        <input type="text" id="login-id" required
-                                            class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
-                                            placeholder="Username">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label
-                                        class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Kata
-                                        Sandi</label>
-                                    <div class="relative">
-                                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-500 text-sm"></i>
-                                        <input type="password" id="login-password" required
-                                            class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-11 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
-                                            placeholder="Kata Sandi">
-                                        <button type="button" onclick="togglePasswordVisibility()"
-                                            class="absolute right-4 top-3.5 text-slate-400 hover:text-haleyora-orange focus:outline-none transition">
-                                            <i id="toggle-password-icon" class="fa-solid fa-eye"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-between text-xs">
-                                    <label class="flex items-center space-x-2 text-slate-400 cursor-pointer">
-                                        <input type="checkbox"
-                                            class="rounded bg-haleyora-dark border-haleyora-blue text-haleyora-orange focus:ring-0">
-                                        <span>Ingat saya</span>
-                                    </label>
-                                    <a href="#" class="text-haleyora-orange hover:underline">Lupa password?</a>
-                                </div>
-                                <button type="submit" id="btn-kirim-inspeksi"
-                                    class="w-full bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-haleyora-orange/25 active:scale-95">
-                                    Masuk
-                                </button>
-                            </form>
+                        <div class="text-center space-y-3">
+                            <img src="p1.jpg" alt="Logo Haleyora Powerindo" class="h-16 mx-auto object-contain"
+                                onerror="this.src='https://via.placeholder.com/150x50?text=Haleyora+Powerindo'">
+                            <h2 class="text-2xl font-extrabold text-white">Selamat Datang</h2>
+                            <p class="text-xs text-slate-400">Masukkan NIP atau Username Akun Anda</p>
                         </div>
+                        <form onsubmit="handleUnifiedLogin(event)" class="space-y-4">
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Username
+                                    / NIP</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-id-card absolute left-4 top-3.5 text-slate-500 text-sm"></i>
+                                    <input type="text" id="login-id" required
+                                        class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
+                                        placeholder="Username">
+                                </div>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Kata
+                                    Sandi</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-500 text-sm"></i>
+                                    <input type="password" id="login-password" required
+                                        class="w-full bg-haleyora-dark/80 border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-11 py-3 text-sm focus:outline-none focus:border-haleyora-orange transition"
+                                        placeholder="Kata Sandi">
+                                    <button type="button" onclick="togglePasswordVisibility()"
+                                        class="absolute right-4 top-3.5 text-slate-400 hover:text-haleyora-orange focus:outline-none transition">
+                                        <i id="toggle-password-icon" class="fa-solid fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <label class="flex items-center space-x-2 text-slate-400 cursor-pointer">
+                                    <input type="checkbox"
+                                        class="rounded bg-haleyora-dark border-haleyora-blue text-haleyora-orange focus:ring-0">
+                                    <span>Ingat saya</span>
+                                </label>
+                                <a href="#" class="text-haleyora-orange hover:underline">Lupa password?</a>
+                            </div>
+                            <button type="submit" id="btn-submit-login"
+                                class="w-full bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-haleyora-orange/25 active:scale-95">
+                                Masuk
+                            </button>
+                        </form>
                     </div>
                 </div>
 
