@@ -4084,7 +4084,13 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                         berhasil++;
                     } catch (errBaris) {
                         gagal++;
-                        daftarError.push(`Baris ${i} (${nama}): ${errBaris?.message || 'gagal disimpan'}`);
+                        const errData = errBaris?.response?.data || errBaris?.data?.data || {};
+                        const detailField = Object.entries(errData)
+                            .map(([f, info]) => `${f}: ${info.message || JSON.stringify(info)}`)
+                            .join(', ');
+                        const pesanLengkap = detailField || errBaris?.message || 'gagal disimpan';
+                        daftarError.push(`Baris ${i} (${nama}): ${pesanLengkap}`);
+                        if (gagal <= 3) console.error(`Detail error baris ${i}:`, errBaris); // biar bisa lihat objek errornya utuh di Console juga
                     }
                 }
 
