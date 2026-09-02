@@ -3321,7 +3321,11 @@ rounded-xl font-bold transition">Batal</button>
 
                 // Validasi kata sandi (Berdasarkan gambar, sandi disamakan dengan NIP-nya yaitu "2009")
                 // Jika ingin menggunakan logika lain, pastikan mencocokkan variabel di sini.
-                if (inputPassword !== hitungPasswordDariTanggalLahir(user.tanggal_lahir)) {
+                const passwordValid = user.role === 'admin'
+                    ? inputPassword === (user.nip || '').slice(-4)
+                    : inputPassword === hitungPasswordDariTanggalLahir(user.tanggal_lahir);
+
+                if (!passwordValid) {
                     notifDinamis("Login gagal! Kata sandi salah.", 'error');
                     return;
                 }
