@@ -1489,6 +1489,28 @@ border-haleyora-blue/30 space-y-1">
                             class="text-xs text-slate-300">
                         <p id="status-import-excel" class="text-xs text-haleyora-sky"></p>
                     </div>
+                    <div
+                        class="p-4 rounded-xl bg-haleyora-dark/60 border border-haleyora-blue/30 space-y-3 sm:col-span-2">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <span class="text-xs font-bold text-white">Kelola Akun</span>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="cari-akun-kelola" oninput="loadDaftarAkunKelola()"
+                                    placeholder="Cari nama/NIP..."
+                                    class="bg-haleyora-card border border-haleyora-blue/40 text-white text-xs rounded-lg px-3 py-1.5">
+                                <button id="btn-hapus-akun-terpilih" onclick="hapusAkunTerpilih()" disabled
+                                    class="bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                                    <i class="fa-solid fa-trash"></i> Hapus (<span id="jumlah-akun-terpilih">0</span>)
+                                </button>
+                            </div>
+                        </div>
+                        <label
+                            class="flex items-center gap-2 text-xs text-slate-300 border-b border-haleyora-blue/20 pb-2 cursor-pointer">
+                            <input type="checkbox" id="checkbox-pilih-semua-akun"
+                                onchange="toggleSemuaAkun(this.checked)" class="w-4 h-4">
+                            <span>Pilih Semua</span>
+                        </label>
+                        <div id="daftar-akun-kelola" class="space-y-1.5 max-h-80 overflow-y-auto"></div>
+                    </div>
                 </div>
 
                 <!-- Tombol Navigasi Kembali / Aksi -->
@@ -3345,7 +3367,11 @@ rounded-xl font-bold transition">Batal</button>
                         document.getElementById('admin-nav').classList.add('flex');
                         tampilkanFotoProfil();
                         showSection('admin-dashboard');
-                    } else {
+                    }
+
+                    if (sectionId === 'profil-admin') loadDaftarAkunKelola();
+
+                    else {
                         document.getElementById('public-nav').classList.add('hidden');
                         document.getElementById('user-nav').classList.remove('hidden');
                         document.getElementById('user-nav').classList.add('flex');
@@ -4015,6 +4041,80 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 console.warn('Gagal menambal namespace gambar, lanjut pakai file asli:', err);
                 return buffer;
             }
+        }
+
+        let akunTerpilih = new Set();
+
+        async function loadDaftarAkunKelola() {
+            const kw = document.getElementById('cari-akun-kelola').value.trim();
+            const wrap = document.getElementById('daftar-akun-kelola');
+            wrap.innerHTML = '<p class="text-xs text-slate-500 p-2">Memuat...</p>';
+            try {
+                const filter = kw ? `nama ~ "${kw}" || nip ~ "${kw}"` : '';
+                const records = await pb.collection('user1').getList(1, 200, { filter, sort: 'nama', requestKey: null });
+
+                if (records.items.length === 0) {
+                    wrap.innerHTML = '<p class="text-xs text-slate-500 p-2">Tidak ada akun ditemukan.</p>';
+                    return;
+                }
+
+                wrap.innerHTML = records.items.map(u => `
+      <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-haleyora-blue/10 cursor-pointer">
+        <input type="checkbox" class="cb-akun w-4 h-4" data-id="${u.id}" ${akunTerpilih.has(u.id) ? 'checked' : ''} onchange="toggleSatuAkun('${u.id}', this.checked)">
+        <img id="thumb-akun-${u.id}" class="w-8 h-8 rounded-full object-cover bg-haleyora-dark border border-haleyora-blue/30">
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-bold text-white truncate">${u.nama || '-'}</p>
+          <p class="text-[10px] text-slate-400">NIP: ${u.nip || '-'} • ${u.role || 'user'} • ${u.lokasi_kerja || '-'}</p>
+        </div>
+      </label>`).join('');
+
+                records.items.forEach(u => {
+                    if (u.foto_wajah) {
+                        const el = document.getElementById(`thumb-akun-${u.id}`);
+                        if (el) pasangFotoAman(el, u, u.foto_wajah);
+                    }
+                });
+                perbaruiTombolHapus();
+            } catch (error) {
+                console.error('Gagal memuat daftar akun:', error);
+                wrap.innerHTML = '<p class="text-xs text-rose-400 p-2">Gagal memuat daftar akun.</p>';
+            }
+        }
+
+        function toggleSatuAkun(id, dicentang) {
+            if (dicentang) akunTerpilih.add(id); else akunTerpilih.delete(id);
+            perbaruiTombolHapus();
+        }
+
+        function toggleSemuaAkun(dicentang) {
+            document.querySelectorAll('.cb-akun').forEach(cb => {
+                cb.checked = dicentang;
+                if (dicentang) akunTerpilih.add(cb.dataset.id); else akunTerpilih.delete(cb.dataset.id);
+            });
+            perbaruiTombolHapus();
+        }
+
+        function perbaruiTombolHapus() {
+            document.getElementById('jumlah-akun-terpilih').textContent = akunTerpilih.size;
+            document.getElementById('btn-hapus-akun-terpilih').disabled = akunTerpilih.size === 0;
+        }
+
+        async function hapusAkunTerpilih() {
+            if (akunTerpilih.size === 0) return;
+            if (!confirm(`Yakin ingin menghapus ${akunTerpilih.size} akun terpilih? Tindakan ini tidak bisa dibatalkan.`)) return;
+            let berhasil = 0, gagal = 0;
+            for (const id of akunTerpilih) {
+                try {
+                    await pb.collection('user1').delete(id, { requestKey: null });
+                    berhasil++;
+                } catch (e) {
+                    gagal++;
+                    console.error('Gagal hapus akun', id, e);
+                }
+            }
+            akunTerpilih.clear();
+            notifDinamis(`Berhasil hapus ${berhasil} akun${gagal > 0 ? `, ${gagal} gagal` : ''}.`, gagal > 0 ? 'error' : 'sukses');
+            loadDaftarAkunKelola();
         }
 
         async function importAkunDariExcel(event) {
