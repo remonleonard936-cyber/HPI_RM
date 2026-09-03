@@ -34,7 +34,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- Export Excel (ExcelJS - mendukung gambar/foto di dalam sel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>fimportAkunDariExcel
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -3231,6 +3231,7 @@ rounded-xl font-bold transition">Batal</button>
             if (sectionId === 'admin-verifikasi') loadPendingReports();
             if (sectionId === 'izin-berkendara') checkUserNotifications();
             if (sectionId === 'status-izin') checkUserNotifications();
+            if (sectionId === 'profil-admin') loadDaftarAkunKelola();
         }
 
         function scrollToSection(id) {
@@ -3368,8 +3369,6 @@ rounded-xl font-bold transition">Batal</button>
                         tampilkanFotoProfil();
                         showSection('admin-dashboard');
                     }
-
-                    if (sectionId === 'profil-admin') loadDaftarAkunKelola();
 
                     else {
                         document.getElementById('public-nav').classList.add('hidden');
