@@ -662,6 +662,20 @@
 
 <body
     class="bg-haleyora-dark text-slate-100 min-h-screen flex flex-col selection:bg-haleyora-orange selection:text-white">
+    <div id="modal-konfirmasi"
+        class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div
+            class="w-full max-w-sm bg-white/10 border border-white/25 rounded-3xl p-6 shadow-2xl backdrop-blur-2xl relative overflow-hidden login-glass-shine">
+            <p id="konfirmasi-pesan" class="text-sm text-white font-medium mb-6 relative z-10"></p>
+            <div class="flex justify-end gap-3 relative z-10">
+                <button type="button" id="konfirmasi-btn-batal"
+                    class="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold transition border border-white/20">Batal</button>
+                <button type="button" id="konfirmasi-btn-ya"
+                    class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition">Ya,
+                    Lanjutkan</button>
+            </div>
+        </div>
+    </div>
     <div id="dynamic-island-notif" class="dynamic-island">
         <i id="dynamic-island-icon" class="fa-solid fa-circle-info"></i>
         <span id="dynamic-island-text"></span>
@@ -2830,6 +2844,29 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             return Array.isArray(v) ? v[0] : v;
         }
 
+        function konfirmasiDinamis(pesan) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('modal-konfirmasi');
+                document.getElementById('konfirmasi-pesan').textContent = pesan;
+                modal.classList.remove('hidden');
+
+                const btnYa = document.getElementById('konfirmasi-btn-ya');
+                const btnBatal = document.getElementById('konfirmasi-btn-batal');
+
+                const bersihkan = (hasil) => {
+                    modal.classList.add('hidden');
+                    btnYa.removeEventListener('click', klikYa);
+                    btnBatal.removeEventListener('click', klikBatal);
+                    resolve(hasil);
+                };
+                const klikYa = () => bersihkan(true);
+                const klikBatal = () => bersihkan(false);
+
+                btnYa.addEventListener('click', klikYa);
+                btnBatal.addEventListener('click', klikBatal);
+            });
+        }
+
         let notifTimeout = null;
         function notifDinamis(pesan, tipe) {
             if (!tipe) {
@@ -3425,9 +3462,14 @@ rounded-xl font-bold transition">Batal</button>
             const btnSnap = document.getElementById(`btn-snap-${id}`);
             if (!video || !activeStreams[id]) return;
 
+            const LEBAR_MAKS_FOTO = 1280; // batas lebar foto, cukup jelas untuk dokumen/inspeksi tapi jauh lebih ringan
+            const lebarAsli = video.videoWidth || 640;
+            const tinggiAsli = video.videoHeight || 480;
+            const skala = lebarAsli > LEBAR_MAKS_FOTO ? LEBAR_MAKS_FOTO / lebarAsli : 1;
+
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
+            canvas.width = Math.round(lebarAsli * skala);
+            canvas.height = Math.round(tinggiAsli * skala);
             const ctx = canvas.getContext('2d');
 
             const facingMode = cameraFacingModes[id] || 'environment';
@@ -3989,7 +4031,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
         }
 
         async function tolakEditRevisi(edit1Id) {
-            if (!confirm('Tolak data revisi ini? User akan diminta memperbaiki lagi.')) return;
+            if (!(await konfirmasiDinamis('Tolak data revisi ini? User akan diminta memperbaiki lagi.'))) return;
             try {
                 const edit = await pb.collection('edit1').getOne(edit1Id);
                 await pb.collection('edit1').update(edit1Id, { status_edit: 'ditolak' });
@@ -4100,7 +4142,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
         async function hapusAkunTerpilih() {
             if (akunTerpilih.size === 0) return;
-            if (!confirm(`Yakin ingin menghapus ${akunTerpilih.size} akun terpilih? Tindakan ini tidak bisa dibatalkan.`)) return;
+            if (!(await konfirmasiDinamis(`Yakin ingin menghapus ${akunTerpilih.size} akun terpilih? Tindakan ini tidak bisa dibatalkan.`))) return;
             let berhasil = 0, gagal = 0;
             for (const id of akunTerpilih) {
                 try {
@@ -4209,7 +4251,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
         }
 
         async function hapusLaporan(id, koleksi) {
-            if (!confirm('Yakin ingin menghapus laporan ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) return;
+            if (!(await konfirmasiDinamis('Yakin ingin menghapus laporan ini secara permanen? Tindakan ini tidak bisa dibatalkan.'))) return;
             try {
                 await pb.collection(koleksi).delete(id);
                 notifDinamis('Laporan berhasil dihapus.');
@@ -4223,7 +4265,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
         }
 
         async function terimaEditRevisi(edit1Id) {
-            if (!confirm('Terima data revisi ini?')) return;
+            if (!(await konfirmasiDinamis('Terima data revisi ini?'))) return;
             try {
                 const edit = await pb.collection('edit1').getOne(edit1Id);
                 const idAsli = idTunggal(edit.laporan_asli_id);
