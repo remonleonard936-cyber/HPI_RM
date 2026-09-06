@@ -1613,6 +1613,13 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     <div id="hasil-pencarian-akun" class="hidden mb-4 grid sm:grid-cols-2 gap-3"></div>
                 </div>
                 </table>
+                <div
+                    class="flex bg-haleyora-dark border border-haleyora-blue/50 rounded-xl overflow-hidden text-xs font-bold mb-3">
+                    <button type="button" id="btn-mode-servis-sebelum" onclick="gantiModeServis('sebelum')"
+                        class="px-3.5 py-2.5 bg-haleyora-blue text-white transition">Sebelum Servis</button>
+                    <button type="button" id="btn-mode-servis-setelah" onclick="gantiModeServis('setelah')"
+                        class="px-3.5 py-2.5 text-slate-300 transition">Setelah Servis</button>
+                </div>
                 <div id="wrapper-tabel-servis" class="hidden">
                     <table class="w-full text-left text-xs text-slate-200">
                         <thead class="bg-haleyora-blue/40 text-white font-bold uppercase tracking-wider text-[11px]">
@@ -1733,6 +1740,56 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                         </table>
                     </div>
                 </div>
+            </div>
+        </section>
+        <section id="form-servis-selesai-section" class="hidden max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+            <div class="bg-haleyora-card/90 border border-haleyora-blue/50 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5">
+                <h2 class="text-xl font-bold text-white">Lapor Servis Selesai</h2>
+                <p class="text-xs text-slate-400">Kendaraan <span id="servis-selesai-nopol-info"
+                        class="text-haleyora-sky font-bold"></span> — masukkan hasil servisnya di bawah.</p>
+
+                <form onsubmit="handleServisSelesaiSubmit(event)" class="space-y-4 text-xs">
+                    <input type="hidden" id="servis-selesai-id">
+                    <div>
+                        <label class="text-[11px] text-slate-400 uppercase font-bold">Catatan Hasil Servis</label>
+                        <textarea id="servis-selesai-catatan" rows="3" required
+                            placeholder="Contoh: Ganti kampas rem depan & belakang, servis rutin selesai"
+                            class="w-full mt-1 bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3 py-2 focus:outline-none focus:border-haleyora-orange"></textarea>
+                    </div>
+
+                    <div class="border border-dashed border-haleyora-blue/40 rounded-2xl p-4 space-y-3 text-center">
+                        <video id="video-servis-selesai" class="w-full rounded-xl bg-black hidden" autoplay
+                            playsinline></video>
+                        <img id="preview-servis-selesai" class="w-full rounded-xl hidden">
+                        <span id="text-servis-selesai" class="text-xs text-slate-400 font-medium block">Kamera
+                            Mati</span>
+                        <div class="flex justify-center gap-2">
+                            <button type="button" onclick="setCameraFacing('servis-selesai', 'environment')"
+                                class="bg-haleyora-blue/60 hover:bg-haleyora-blue text-white text-[11px] font-bold px-3 py-1 rounded-lg transition">Kamera
+                                Belakang</button>
+                            <button type="button" onclick="setCameraFacing('servis-selesai', 'user')"
+                                class="bg-slate-700 hover:bg-slate-600 text-white text-[11px] font-bold px-3 py-1 rounded-lg transition">Kamera
+                                Depan</button>
+                        </div>
+                        <div class="flex justify-center gap-2">
+                            <button type="button" onclick="startCamera('servis-selesai')"
+                                class="bg-haleyora-blue hover:bg-haleyora-sky text-white text-xs font-bold px-4 py-2 rounded-xl transition"><i
+                                    class="fa-solid fa-camera"></i> Buka Kamera</button>
+                            <button type="button" id="btn-snap-servis-selesai" onclick="takeSnapshot('servis-selesai')"
+                                class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition hidden"><i
+                                    class="fa-solid fa-circle-dot"></i> Ambil Foto</button>
+                        </div>
+                    </div>
+                    <input type="file" id="file-servis-selesai" name="foto_setelah" accept="image/*" class="hidden">
+
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="showSection('status-izin')"
+                            class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl font-bold transition">Batal</button>
+                        <button type="submit"
+                            class="bg-gradient-to-r from-haleyora-orange to-amber-500 text-white px-5 py-2 rounded-xl font-bold transition">Kirim
+                            Laporan Selesai</button>
+                    </div>
+                </form>
             </div>
         </section>
     </main>
@@ -2630,6 +2687,31 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             }
         }
 
+        async function cekStatusServisUser() {
+            try {
+                if (!currentUser) return;
+                const records = await pb.collection('servis').getFullList({
+                    filter: `user_id = "${currentUser.id}" && status = "diproses" && (status_setelah = "" || status_setelah = "belum")`,
+                    requestKey: null
+                });
+                const wrap = document.getElementById('user-notification-container');
+                if (!wrap || records.length === 0) return;
+
+                records.forEach(rekam => {
+                    wrap.innerHTML += `
+        <div class="bg-haleyora-sky/20 border border-haleyora-sky/50 p-4 rounded-xl flex justify-between items-center text-sm gap-3">
+          <div>
+            <strong class="text-haleyora-sky"><i class="fa-solid fa-wrench mr-1"></i> Servis Selesai?</strong>
+            <p class="text-white mt-1">Kendaraan ${rekam.jenis_kendaraan || ''} sedang diproses servis. Sudah selesai? Laporkan hasilnya di sini.</p>
+          </div>
+          <button type="button" onclick="bukaFormServisSelesai('${rekam.id}', '${rekam.jenis_kendaraan || ''}')" class="bg-haleyora-sky hover:bg-sky-400 text-white px-4 py-2 rounded-lg font-bold shrink-0">Lapor Selesai</button>
+        </div>`;
+                });
+            } catch (error) {
+                console.error('Gagal cek status servis user:', error);
+            }
+        }
+
         async function cekStatusRevisiUser() {
             try {
                 // Cari laporan milik user yang statusnya disuruh revisi oleh admin
@@ -3108,6 +3190,36 @@ rounded-xl font-bold transition">Batal</button>
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        function bukaFormServisSelesai(servisId, nopol) {
+            document.getElementById('servis-selesai-id').value = servisId;
+            document.getElementById('servis-selesai-nopol-info').textContent = nopol || '';
+            document.getElementById('servis-selesai-catatan').value = '';
+            showSection('form-servis-selesai-section');
+        }
+
+        async function handleServisSelesaiSubmit(event) {
+            event.preventDefault();
+            try {
+                const servisId = document.getElementById('servis-selesai-id').value;
+                const formData = new FormData();
+                formData.append('catatan_setelah', document.getElementById('servis-selesai-catatan').value);
+                formData.append('status_setelah', 'menunggu_verifikasi');
+
+                const fileFoto = document.getElementById('file-servis-selesai');
+                if (fileFoto && fileFoto.files.length > 0) {
+                    formData.append('foto_setelah', fileFoto.files[0]);
+                }
+
+                await pb.collection('servis').update(servisId, formData, { requestKey: null });
+                notifDinamis('Laporan servis selesai berhasil dikirim, menunggu diperiksa admin!');
+                showSection('status-izin');
+                cekStatusServisUser();
+            } catch (error) {
+                console.error('Gagal mengirim laporan servis selesai:', error);
+                notifDinamis('Gagal mengirim laporan servis selesai.', 'error');
+            }
+        }
+
         async function handleServisSubmit(event) {
             event.preventDefault();
             try {
@@ -3419,6 +3531,7 @@ rounded-xl font-bold transition">Batal</button>
                         showSection('status-izin');
                         if (typeof cekStatusRevisiUser === 'function') {
                             cekStatusRevisiUser();
+                            cekStatusServisUser();
                         }
                     }
                 });
@@ -3634,11 +3747,33 @@ rounded-xl font-bold transition">Batal</button>
             if (tab === 'rekap') loadRekapBulanan();
         }
 
+        let modeDataServis = 'sebelum';
+
+        function gantiModeServis(mode) {
+            modeDataServis = mode;
+            document.getElementById('btn-mode-servis-sebelum').className = 'px-3.5 py-2.5 transition ' + (mode === 'sebelum' ? 'bg-haleyora-blue text-white' : 'text-slate-300');
+            document.getElementById('btn-mode-servis-setelah').className = 'px-3.5 py-2.5 transition ' + (mode === 'setelah' ? 'bg-haleyora-blue text-white' : 'text-slate-300');
+            loadServisReports();
+        }
+
+        async function terimaServisSelesai(id) {
+            if (!(await konfirmasiDinamis('Terima laporan servis selesai ini?'))) return;
+            try {
+                await pb.collection('servis').update(id, { status_setelah: 'selesai', status: 'selesai' }, { requestKey: null });
+                notifDinamis('Servis ditandai selesai.');
+                loadServisReports();
+            } catch (error) {
+                console.error(error);
+                notifDinamis('Gagal memperbarui status servis.', 'error');
+            }
+        }
+
         async function loadServisReports() {
             const tbody = document.getElementById('servis-table-body');
             if (!tbody) return;
             try {
-                const records = await pb.collection('servis').getList(1, 50, { sort: '-created', requestKey: null });
+                const filterServis = modeDataServis === 'setelah' ? 'status_setelah = "menunggu_verifikasi"' : '';
+                const records = await pb.collection('servis').getList(1, 50, { sort: '-created', filter: filterServis, requestKey: null });
                 tbody.innerHTML = records.items.length === 0
                     ? '<tr><td colspan="7" class="text-center py-4 text-slate-400">Belum ada pengajuan servis.</td></tr>'
                     : '';
@@ -3656,6 +3791,9 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
             ${item.status === 'pending' ? `
               <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition mr-1"><i class="fa-solid fa-check"></i></button>
               <button onclick="updateStatusServis('${item.id}', 'selesai')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
+` : ''}
+${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' ? `
+  <button onclick="terimaServisSelesai('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
 ` : ''}
 <button onclick="hapusLaporan('${item.id}', 'servis')" class="bg-slate-700 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
 </td>
@@ -4390,6 +4528,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
         function checkUserNotifications() {
             if (typeof cekStatusRevisiUser === 'function' && currentUser) {
                 cekStatusRevisiUser();
+                cekStatusServisUser();
             }
         }
 
