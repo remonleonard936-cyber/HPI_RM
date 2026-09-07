@@ -1059,6 +1059,22 @@
                                 </div>
                             </div>
                             <div class="grid sm:grid-cols-12 items-center gap-2">
+                                <label class="sm:col-span-3 text-xs font-semibold text-slate-300">Jenis Kendaraan yang
+                                    Digunakan</label>
+                                <div class="sm:col-span-9 flex items-center space-x-6">
+                                    <label class="flex items-center space-x-2 text-xs text-slate-200 cursor-pointer">
+                                        <input type="radio" name="jenis_penggunaan_kendaraan" value="Mobil Perusahaan"
+                                            required class="text-haleyora-orange focus:ring-0">
+                                        <span>Mobil Perusahaan</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 text-xs text-slate-200 cursor-pointer">
+                                        <input type="radio" name="jenis_penggunaan_kendaraan" value="Mobil Pengganti"
+                                            class="text-haleyora-orange focus:ring-0">
+                                        <span>Mobil Pengganti</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="grid sm:grid-cols-12 items-center gap-2">
                                 <label class="sm:col-span-3 text-xs font-semibold text-slate-300">3. Jenis
                                     Kendaraan</label>
                                 <div class="sm:col-span-9">
@@ -1242,11 +1258,13 @@ focus:border-haleyora-orange transition">
                                                     <tr class="hover:bg-haleyora-blue/10 transition">
                                                         <td class="p-3 text-center text-slate-400 font-medium align-middle">${itemNo}</td>
                                                         <td class="p-3 font-medium item-name align-middle">${item}</td>
-                                                        <td class="p-3 text-center align-middle"><input type="radio" name="item_${itemNo}" value="BAIK" required class="text-haleyora-orange focus:ring-0 cursor-pointer w-4 h-4"></td>
-                                                        <td class="p-3 text-center align-middle"><input type="radio" name="item_${itemNo}" value="TIDAK BAIK" onchange="toggleKeteranganItem(${itemNo})" class="text-haleyora-orange focus:ring-0 cursor-pointer w-4 h-4"></td>
-                                                        <td class="p-3 align-middle">
-                                                            <textarea id="keterangan-item_${itemNo}" rows="2" placeholder="Jelaskan kerusakan..." class="hidden w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange transition"></textarea>
-                                                        </td>
+                                                        <td class="p-3 text-center align-middle" colspan="2">
+  <input type="text" name="item_${itemNo}" required placeholder="Tulis kondisi..."
+    class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange">
+</td>
+<td class="p-3 align-middle">
+<textarea id="keterangan-item_${itemNo}" rows="2" placeholder="Catatan tambahan (opsional)..." class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange transition"></textarea>
+</td>
                                                     </tr>
                                                 `);
                                             });
@@ -2422,7 +2440,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 dataRekapTerakhir.forEach(item => {
                     const key = item.nopol || '-';
                     if (!dataPerKendaraan[key]) {
-                        dataPerKendaraan[key] = { jenis_kendaraan: item.jenis_kendaraan || '-', nopol: key, perHari: {}, catatan: [] };
+                        dataPerKendaraan[key] = { jenis_kendaraan: item.jenis_kendaraan || '-', nopol: key, perHari: {}, perHariMP: {}, catatan: [] };
                     }
                     const tglLapor = new Date(item.created).getDate();
                     const kondisi = item.kondisi_kendaraan || '';
@@ -2430,6 +2448,9 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     if (kondisi === 'Baik') kode = 'B';
                     else if (kondisi === 'Tidak Baik') kode = 'TB';
                     if (kode) dataPerKendaraan[key].perHari[tglLapor] = kode;
+                    if (item.jenis_penggunaan_kendaraan === 'Mobil Pengganti') {
+                        dataPerKendaraan[key].perHariMP[tglLapor] = true;
+                    }
                     if (item.catatan_admin) dataPerKendaraan[key].catatan.push(item.catatan_admin);
                 });
 
@@ -2484,7 +2505,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     { col: 1, value: 'No' },
                     { col: 2, value: 'Kendaraan' },
                     { col: 3, value: 'Nopol' },
-                    { col: 4, value: 'Kondisi Kendaraan per Tanggal (B = Baik, TB = Tidak Baik)' },
+                    { col: 4, value: 'Kondisi Kendaraan per Tanggal (B = Baik, TB = Tidak Baik, sel kuning = Mobil Pengganti)' },
                     { col: 4 + jumlahHari, value: 'Catatan' }
                 ];
                 headerMaster.forEach(h => {
@@ -2497,11 +2518,14 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
 
                 // Baris nomor tanggal (1..jumlahHari) -> sel individual, TIDAK digabung, aman diisi satu-satu
                 for (let h = 1; h <= jumlahHari; h++) {
-                    const cell = sheet.getCell(barisHeader + 1, 3 + h);
-                    cell.value = h;
-                    cell.style = gayaHeader;
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDDEBFF' } };
-                    cell.border = borderTipis;
+                    const cell = sheet.getCell(baris, 3 + h);
+                    cell.value = kendaraan.perHari[h] || '-';
+                    cell.alignment = { horizontal: 'center' };
+                    cell.font = { size: 9 };
+                    if (kendaraan.perHariMP[h]) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE699' } };
+                        cell.note = 'Menggunakan Mobil Pengganti pada tanggal ini';
+                    }
                 }
 
                 // Merge dilakukan PALING TERAKHIR, setelah semua sel master sudah punya value/style/border
@@ -2804,8 +2828,8 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     const itemNo = idx + 1;
                     const entry = checklistLama[namaItem];
                     if (!entry) return;
-                    const radio = document.querySelector(`input[name="item_${itemNo}"][value="${entry.kondisi}"]`);
-                    if (radio) radio.checked = true;
+                    const inputKondisi = document.querySelector(`input[name="item_${itemNo}"]`);
+                    if (inputKondisi) inputKondisi.value = entry.kondisi;
                     const ket = document.getElementById(`keterangan-item_${itemNo}`);
                     if (ket) {
                         ket.value = entry.keterangan || '';
@@ -3620,7 +3644,7 @@ rounded-xl font-bold transition">Batal</button>
         }
 
         function toggleKeteranganItem(itemNo) {
-            const kondisi = document.querySelector(`input[name="item_${itemNo}"]:checked`)?.value;
+            const kondisi = document.querySelector(`input[name="item_${itemNo}"]`)?.value;
             const kolomKeterangan = document.getElementById(`keterangan-item_${itemNo}`);
             if (!kolomKeterangan) return;
             if (kondisi === 'TIDAK BAIK') {
@@ -3644,6 +3668,7 @@ rounded-xl font-bold transition">Batal</button>
 
             formData.append('supir', document.getElementById('input-nama-supir').value);
             formData.append('waktu_inspeksi', document.querySelector('input[name="waktu_inspeksi"]:checked')?.value || '');
+            formData.append('jenis_penggunaan_kendaraan', document.querySelector('input[name="jenis_penggunaan_kendaraan"]:checked')?.value || '');
             formData.append('jenis_kendaraan', document.getElementById('input-jenis-kendaraan').value);
             formData.append('nopol', document.getElementById('input-nopol').value);
             formData.append('no_rangka', document.getElementById('input-no-rangka').value);
@@ -3668,20 +3693,20 @@ rounded-xl font-bold transition">Batal</button>
             let semuaItemTerisi = true;
             allInspectionItems.forEach((namaItem, idx) => {
                 const itemNo = idx + 1;
-                const kondisi = document.querySelector(`input[name="item_${itemNo}"]:checked`)?.value || '';
+                const kondisi = document.querySelector(`input[name="item_${itemNo}"]`)?.value.trim() || '';
                 if (!kondisi) semuaItemTerisi = false;
                 const keteranganEl = document.getElementById(`keterangan-item_${itemNo}`);
                 checklistData[namaItem] = {
                     kondisi: kondisi,
-                    keterangan: kondisi === 'TIDAK BAIK' ? (keteranganEl?.value || '') : ''
+                    keterangan: keteranganEl?.value || ''
                 };
             });
-
             if (!semuaItemTerisi) {
                 notifDinamis('Mohon lengkapi seluruh 28 item checklist sebelum mengirim laporan.');
                 if (tombolKirim) tombolKirim.disabled = false;
                 return;
             }
+
             formData.append('checklist', JSON.stringify(checklistData));
             formData.append('user_id', currentUser.id);
 
@@ -3880,7 +3905,10 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
         <td class="p-3 text-center border-b border-haleyora-blue/20">${idx + 1}</td>
         <td class="p-3 border-b border-haleyora-blue/20">${tanggal}</td>
         <td class="p-3 border-b border-haleyora-blue/20">${item.jenis_kendaraan || '-'}</td>
-        <td class="p-3 border-b border-haleyora-blue/20 font-bold text-haleyora-sky">${item.nopol || '-'}</td>
+        <td class="p-3 border-b border-haleyora-blue/20 font-bold text-haleyora-sky">
+  ${item.nopol || '-'}
+  ${item.jenis_penggunaan_kendaraan === 'Mobil Pengganti' ? '<span class="ml-1 inline-block bg-amber-500/20 text-amber-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full align-middle">MOBIL PENGGANTI</span>' : ''}
+</td>
         <td class="p-3 border-b border-haleyora-blue/20 ${kondisiClass}">${kondisi}</td>
         <td class="p-3 border-b border-haleyora-blue/20">${item.catatan_admin || '-'} <span class="text-slate-500">(${lokasiUser})</span></td>
       `;
