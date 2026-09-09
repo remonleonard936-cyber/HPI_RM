@@ -2893,16 +2893,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
 
         // Ganti URL dengan URL server PocketBase Anda
         // 1. Inisialisasi PocketBase seperti biasa di file HTML kamu
-        const pb = new PocketBase('https://backup-stagnant-apache.ngrok-free.dev');
-
-        // 2. Tambahkan baris ini tepat di bawahnya agar tidak diblokir ngrok
-        pb.beforeSend = function (url, options) {
-            options.headers = {
-                ...options.headers,
-                'ngrok-skip-browser-warning': 'true',
-            };
-            return { url, options };
-        };
+        const pb = new PocketBase('https://api.remon.web.id');
 
         function resetFormInspeksiState() {
             isRevisiMode = false;
