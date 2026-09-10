@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PT Haleyora Powerindo - Portal Layanan & Pegawai</title>
+    <link rel="icon" type="image/jpeg" href="p1.jpg">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -1252,21 +1253,46 @@ focus:border-haleyora-orange transition">
                                                 "Kondisi Rem", "Tanggal Penggantian Oli Mesin", "Air Radiator", "AKI",
                                                 "V-Belt", "Buku Servis Tersedia & Ter-Update", "Odometer Tercatat", "Klakson"
                                             ];
+                                            const itemTanpaRadio = ['Buku Servis Tersedia & Ter-Update', 'Odometer Tercatat'];
                                             allInspectionItems.forEach((item, idx) => {
                                                 const itemNo = idx + 1;
-                                                document.write(`
-                                                    <tr class="hover:bg-haleyora-blue/10 transition">
-                                                        <td class="p-3 text-center text-slate-400 font-medium align-middle">${itemNo}</td>
-                                                        <td class="p-3 font-medium item-name align-middle">${item}</td>
-                                                        <td class="p-3 text-center align-middle" colspan="2">
-  <input type="text" name="item_${itemNo}" required placeholder="Tulis kondisi..."
-    class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange">
+                                                if (itemTanpaRadio.includes(item)) {
+                                                    document.write(`
+            <tr class="hover:bg-haleyora-blue/10 transition">
+                <td class="p-3 text-center text-slate-400 font-medium align-middle">${itemNo}</td>
+                <td class="p-3 font-medium item-name align-middle">${item}</td>
+                <td class="p-3 text-center align-middle" colspan="2">
+<input type="text" name="item_${itemNo}" required placeholder="Tulis kondisi..."
+class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange">
 </td>
 <td class="p-3 align-middle">
 <textarea id="keterangan-item_${itemNo}" rows="2" placeholder="Catatan tambahan (opsional)..." class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange transition"></textarea>
 </td>
-                                                    </tr>
-                                                `);
+            </tr>
+        `);
+                                                } else {
+                                                    document.write(`
+            <tr class="hover:bg-haleyora-blue/10 transition">
+                <td class="p-3 text-center text-slate-400 font-medium align-middle">${itemNo}</td>
+                <td class="p-3 font-medium item-name align-middle">${item}</td>
+                <td class="p-3 text-center align-middle">
+                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="item_${itemNo}" value="BAIK" required onchange="toggleKeteranganItem(${itemNo})" class="w-4 h-4 accent-emerald-500">
+                        <span class="text-slate-900 text-xs font-semibold">Baik</span>
+                    </label>
+                </td>
+                <td class="p-3 text-center align-middle">
+                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="item_${itemNo}" value="TIDAK BAIK" onchange="toggleKeteranganItem(${itemNo})" class="w-4 h-4 accent-rose-500">
+                        <span class="text-slate-900 text-xs font-semibold">Tidak Baik</span>
+                    </label>
+                </td>
+                <td class="p-3 align-middle">
+<textarea id="keterangan-item_${itemNo}" rows="2" placeholder="Wajib isi jika Tidak Baik..." class="hidden w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange transition"></textarea>
+</td>
+            </tr>
+        `);
+                                                }
                                             });
                                         </script>
                                     </tbody>
@@ -2823,12 +2849,18 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 document.getElementById('input-masa-sim').value = rekam.masa_aktif_sim || '';
 
                 const checklistLama = rekam.checklist || {};
+                const itemTanpaRadioRevisi = ['Buku Servis Tersedia & Ter-Update', 'Odometer Tercatat'];
                 allInspectionItems.forEach((namaItem, idx) => {
                     const itemNo = idx + 1;
                     const entry = checklistLama[namaItem];
                     if (!entry) return;
-                    const inputKondisi = document.querySelector(`input[name="item_${itemNo}"]`);
-                    if (inputKondisi) inputKondisi.value = entry.kondisi;
+                    if (itemTanpaRadioRevisi.includes(namaItem)) {
+                        const inputKondisi = document.querySelector(`input[name="item_${itemNo}"]`);
+                        if (inputKondisi) inputKondisi.value = entry.kondisi;
+                    } else {
+                        const radioTerpilih = document.querySelector(`input[name="item_${itemNo}"][value="${entry.kondisi}"]`);
+                        if (radioTerpilih) radioTerpilih.checked = true;
+                    }
                     const ket = document.getElementById(`keterangan-item_${itemNo}`);
                     if (ket) {
                         ket.value = entry.keterangan || '';
@@ -2912,6 +2944,8 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
 
             // Sembunyikan semua kolom keterangan kerusakan
             document.querySelectorAll('#inspection-form textarea[id^="keterangan-item_"]').forEach(el => {
+                const nomorItem = el.id.replace('keterangan-item_', '');
+                if (nomorItem === '26' || nomorItem === '27') { el.value = ''; return; }
                 el.classList.add('hidden');
                 el.value = '';
             });
@@ -3634,7 +3668,7 @@ rounded-xl font-bold transition">Batal</button>
         }
 
         function toggleKeteranganItem(itemNo) {
-            const kondisi = document.querySelector(`input[name="item_${itemNo}"]`)?.value;
+            const kondisi = document.querySelector(`input[name="item_${itemNo}"]:checked`)?.value;
             const kolomKeterangan = document.getElementById(`keterangan-item_${itemNo}`);
             if (!kolomKeterangan) return;
             if (kondisi === 'TIDAK BAIK') {
@@ -3683,8 +3717,11 @@ rounded-xl font-bold transition">Batal</button>
             let semuaItemTerisi = true;
             allInspectionItems.forEach((namaItem, idx) => {
                 const itemNo = idx + 1;
-                const kondisi = document.querySelector(`input[name="item_${itemNo}"]`)?.value.trim() || '';
-                if (!kondisi) semuaItemTerisi = false;
+                const itemTanpaRadio = ['Buku Servis Tersedia & Ter-Update', 'Odometer Tercatat'];
+                const kondisi = itemTanpaRadio.includes(namaItem)
+                    ? (document.querySelector(`input[name="item_${itemNo}"]`)?.value.trim() || '')
+                    : (document.querySelector(`input[name="item_${itemNo}"]:checked`)?.value || '');
+                if (!kondisi) semuaItemTerisi = false;;
                 const keteranganEl = document.getElementById(`keterangan-item_${itemNo}`);
                 checklistData[namaItem] = {
                     kondisi: kondisi,
