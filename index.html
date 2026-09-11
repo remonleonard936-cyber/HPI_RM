@@ -1261,12 +1261,9 @@ focus:border-haleyora-orange transition">
             <tr class="hover:bg-haleyora-blue/10 transition">
                 <td class="p-3 text-center text-slate-400 font-medium align-middle">${itemNo}</td>
                 <td class="p-3 font-medium item-name align-middle">${item}</td>
-                <td class="p-3 text-center align-middle" colspan="2">
+                <td class="p-3 text-center align-middle" colspan="3">
 <input type="text" name="item_${itemNo}" required placeholder="Tulis kondisi..."
 class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange">
-</td>
-<td class="p-3 align-middle">
-<textarea id="keterangan-item_${itemNo}" rows="2" placeholder="Catatan tambahan (opsional)..." class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-haleyora-orange transition"></textarea>
 </td>
             </tr>
         `);
@@ -1620,16 +1617,16 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                             <option value="">Semua Lokasi Kerja</option>
                             <option value="MEDAN">MEDAN</option>
                             <option value="PEMATANG SIANTAR">PEMATANG SIANTAR</option>
-                            <option value="RANTAUPRAPAT">RANTAU PRAPAT</option>
+                            <option value="RANTAU PRAPAT">RANTAU PRAPAT</option>
                             <option value="UP2D">UP2D</option>
                             <option value="UID">UID</option>
-                            <option value="LUBUKPAKAM">LUBUKPAKAM</option>
+                            <option value="LUBUK PAKAM">LUBUKPAKAM</option>
                             <option value="BINJAI">BINJAI</option>
-                            <option value="MEDANUTARA">MEDAN UTARA</option>
-                            <option value="PADANGSIDEMPUAN">PADANG SIDEMPUAN</option>
+                            <option value="MEDAN UTARA">MEDAN UTARA</option>
+                            <option value="PADANG SIDEMPUAN">PADANG SIDEMPUAN</option>
                             <option value="NIAS">NIAS</option>
                             <option value="SIBOLGA">SIBOLGA</option>
-                            <option value="BUKITBARISAN">BUKIT BARISAN</option>
+                            <option value="BUKIT BARISAN">BUKIT BARISAN</option>
                         </select>
                         <div
                             class="flex bg-haleyora-dark border border-haleyora-blue/50 rounded-xl overflow-hidden text-xs font-bold">
@@ -3734,6 +3731,8 @@ rounded-xl font-bold transition">Batal</button>
                 return;
             }
 
+            const adaYangTidakBaik = Object.values(checklistData).some(entry => entry.kondisi === 'TIDAK BAIK');
+            formData.append('kondisi_kendaraan', adaYangTidakBaik ? 'Tidak Baik' : 'Baik');
             formData.append('checklist', JSON.stringify(checklistData));
             formData.append('user_id', currentUser.id);
 
@@ -3892,7 +3891,7 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
                 filterParts.push(`nopol ~ "${nopolKeyword.replace(/"/g, '\\"')}"`);
             }
             if (daerah) {
-                filterParts.push(`user_id.lokasi_kerja = "${daerah}"`);
+                filterParts.push(`user_id.lokasi_kerja ~ "${daerah}"`);
             }
 
             infoRekapTerakhir = {
@@ -4059,7 +4058,7 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
                     filterParts.push(`nopol ~ "${nopolKeyword.replace(/"/g, '\\"')}"`);
                 }
                 if (lokasi) {
-                    filterParts.push(`user_id.lokasi_kerja = "${lokasi}"`);
+                    filterParts.push(`user_id.lokasi_kerja ~ "${lokasi}"`);
                 }
 
                 const namaKoleksi = modeDataInspeksi === 'edit' ? 'edit1' : 'laporan';
@@ -4388,7 +4387,7 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                     const nip = String(row.getCell(4).value || '').replace(/^'/, '').trim(); // D = No KTP
                     let tglRaw = row.getCell(5).value;                                    // E = Tanggal Lahir
                     let tglLahir = tglRaw instanceof Date ? tglRaw.toISOString().slice(0, 10) : String(tglRaw || '').trim();
-                    const lokasiKerja = String(row.getCell(6).value || '').trim();        // F = Unit PLN
+                    const lokasiKerja = String(row.getCell(6).value || '').trim().toUpperCase().replace(/\s+/g, ' ');        // F = Unit PLN
 
                     if (!nama || !nip) continue;
 
