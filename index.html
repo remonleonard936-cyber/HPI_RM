@@ -1615,18 +1615,18 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                         <select id="filter-lokasi" onchange="loadPendingReports()"
                             class="bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-haleyora-orange">
                             <option value="">Semua Lokasi Kerja</option>
-                            <option value="MEDAN">MEDAN</option>
-                            <option value="PEMATANG SIANTAR">PEMATANG SIANTAR</option>
-                            <option value="RANTAU PRAPAT">RANTAU PRAPAT</option>
-                            <option value="UP2D">UP2D</option>
-                            <option value="UID">UID</option>
-                            <option value="LUBUK PAKAM">LUBUKPAKAM</option>
-                            <option value="BINJAI">BINJAI</option>
+                            <option value="MEDAN">UP3 MEDAN</option>
+                            <option value="PEMATANG SIANTAR">UP3 PEMATANG SIANTAR</option>
+                            <option value="RANTAU PRAPAT">UP3 RANTAU PRAPAT</option>
+                            <option value="UP2D">UP2D SUMUT</option>
+                            <option value="UID">UID SUMUT</option>
+                            <option value="LUBUK PAKAM">UP3 LUBUK PAKAM</option>
+                            <option value="BINJAI">UP3 BINJAI</option>
                             <option value="MEDAN UTARA">MEDAN UTARA</option>
-                            <option value="PADANG SIDEMPUAN">PADANG SIDEMPUAN</option>
-                            <option value="NIAS">NIAS</option>
-                            <option value="SIBOLGA">SIBOLGA</option>
-                            <option value="BUKIT BARISAN">BUKIT BARISAN</option>
+                            <option value="PADANG SIDEMPUAN">UP3 PADANG SIDEMPUAN</option>
+                            <option value="NIAS">UP3 NIAS</option>
+                            <option value="SIBOLGA">UP3 SIBOLGA</option>
+                            <option value="BUKIT BARISAN">UP3BUKIT BARISAN</option>
                         </select>
                         <div
                             class="flex bg-haleyora-dark border border-haleyora-blue/50 rounded-xl overflow-hidden text-xs font-bold">
@@ -3891,7 +3891,7 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
                 filterParts.push(`nopol ~ "${nopolKeyword.replace(/"/g, '\\"')}"`);
             }
             if (daerah) {
-                filterParts.push(`user_id.lokasi_kerja ~ "${daerah}"`);
+                filterParts.push(`user_id.lokasi_kode = "${daerah}"`);
             }
 
             infoRekapTerakhir = {
@@ -4058,7 +4058,7 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
                     filterParts.push(`nopol ~ "${nopolKeyword.replace(/"/g, '\\"')}"`);
                 }
                 if (lokasi) {
-                    filterParts.push(`user_id.lokasi_kerja ~ "${lokasi}"`);
+                    filterParts.push(`user_id.lokasi_kode = "${lokasi}"`);
                 }
 
                 const namaKoleksi = modeDataInspeksi === 'edit' ? 'edit1' : 'laporan';
@@ -4149,6 +4149,19 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 const tbody = document.getElementById('verifikasi-table-body');
                 if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-rose-400">Gagal memuat data. Periksa koneksi PocketBase di console.</td></tr>';
             }
+        }
+
+        function getLokasiKode(teksLokasi) {
+            const teks = String(teksLokasi || '').toUpperCase();
+            const daftarLokasi = [
+                'MEDAN UTARA', 'PEMATANG SIANTAR', 'RANTAU PRAPAT', 'PADANG SIDEMPUAN',
+                'BUKIT BARISAN', 'LUBUK PAKAM', 'SIBOLGA', 'BINJAI', 'NIAS',
+                'UP2D', 'UID', 'MEDAN'
+            ];
+            for (const lokasi of daftarLokasi) {
+                if (teks.includes(lokasi)) return lokasi;
+            }
+            return teks;
         }
 
         async function updateAdminStats() {
@@ -4388,17 +4401,16 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                     let tglRaw = row.getCell(5).value;                                    // E = Tanggal Lahir
                     let tglLahir = tglRaw instanceof Date ? tglRaw.toISOString().slice(0, 10) : String(tglRaw || '').trim();
                     const lokasiKerja = String(row.getCell(6).value || '').trim().toUpperCase().replace(/\s+/g, ' ');        // F = Unit PLN
-
+                    const lokasiKode = getLokasiKode(lokasiKerja);
                     if (!nama || !nip) continue;
-
                     try {
                         const cekAda = await pb.collection('user1').getList(1, 1, { filter: `nip = "${nip}"`, requestKey: null });
                         if (cekAda.items.length > 0) { dilewati++; continue; }
-
                         const formDataUser = new FormData();
                         formDataUser.append('nip', nip);
                         formDataUser.append('nama', nama);
                         formDataUser.append('lokasi_kerja', lokasiKerja);
+                        formDataUser.append('lokasi_kode', lokasiKode);
                         formDataUser.append('tanggal_lahir', tglLahir);
                         formDataUser.append('role', 'user');
 
