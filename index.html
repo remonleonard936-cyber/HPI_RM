@@ -1722,18 +1722,18 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                                 <select id="rekap-filter-daerah" onchange="loadRekapBulanan()"
                                     class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl pl-11 pr-4 py-2.5 text-xs focus:outline-none focus:border-haleyora-sky focus:ring-1 focus:ring-haleyora-sky transition-all duration-300 shadow-sm appearance-none">
                                     <option value="">Semua Daerah / Lokasi</option>
-                                    <option value="MEDAN">MEDAN</option>
-                                    <option value="PEMATANG SIANTAR">PEMATANG SIANTAR</option>
-                                    <option value="RANTAUPRAPAT">RANTAU PRAPAT</option>
-                                    <option value="UP2D">UP2D</option>
-                                    <option value="UID">UID</option>
-                                    <option value="LUBUKPAKAM">LUBUKPAKAM</option>
-                                    <option value="BINJAI">BINJAI</option>
-                                    <option value="MEDANUTARA">MEDAN UTARA</option>
-                                    <option value="PADANGSIDEMPUAN">PADANG SIDEMPUAN</option>
-                                    <option value="NIAS">NIAS</option>
-                                    <option value="SIBOLGA">SIBOLGA</option>
-                                    <option value="BUKITBARISAN">BUKIT BARISAN</option>
+                                    <option value="MEDAN">UP3 MEDAN</option>
+                                    <option value="PEMATANG SIANTAR">UP3 PEMATANG SIANTAR</option>
+                                    <option value="RANTAU PRAPAT">UP3 RANTAU PRAPAT</option>
+                                    <option value="UP2D">UP2D SUMUT</option>
+                                    <option value="UID">UID SUMUT</option>
+                                    <option value="LUBUK PAKAM">UP3 LUBUK PAKAM</option>
+                                    <option value="BINJAI">UP3 BINJAI</option>
+                                    <option value="MEDAN UTARA">MEDAN UTARA</option>
+                                    <option value="PADANG SIDEMPUAN">UP3 PADANG SIDEMPUAN</option>
+                                    <option value="NIAS">UP3 NIAS</option>
+                                    <option value="SIBOLGA">UP3 SIBOLGA</option>
+                                    <option value="BUKIT BARISAN">UP3 BUKIT BARISAN</option>
                                     <!-- Tambahkan opsi lain sesuai kebutuhan gambar Anda -->
                                 </select>
                                 <i
@@ -3187,15 +3187,27 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                                 <input type="text" id="servis-nama" required placeholder="Masukkan nama Anda" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-haleyora-sky">
                             </div>
                             <div>
+    <label class="block font-semibold text-slate-300 mb-1">Nomor Telepon</label>
+    <input type="tel" id="servis-telepon" required placeholder="Contoh: 081234567890" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-haleyora-sky">
+</div>
+                            <div>
                                 <label class="block font-semibold text-slate-300 mb-1">Jenis Kendaraan</label>
                                 <input type="text" id="servis-motor" required placeholder="Contoh: Mobil Operasional / Motor Yantek" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-haleyora-sky">
                             </div>
                             <div>
-                                <label class="block font-semibold text-slate-300 mb-1">Yang diperbaiki/diganti</label>
-                                <textarea id="servis-kerusakan" rows="3" required placeholder="Jelaskan bagian diperbaiki atau diganti..." class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl p-3 focus:outline-none focus:border-haleyora-sky"></textarea>
-                            </div>
-                            <div>
-                                <label class="block font-semibold text-slate-300 mb-2">Foto Kerusakan (Opsional)</label>
+    <label class="block font-semibold text-slate-300 mb-1">Yang diperbaiki/diganti</label>
+    <textarea id="servis-kerusakan" rows="3" required placeholder="Jelaskan bagian diperbaiki atau diganti..." class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl p-3 focus:outline-none focus:border-haleyora-sky"></textarea>
+</div>
+<div>
+    <label class="block font-semibold text-slate-300 mb-2">Status Pengajuan</label>
+    <input type="hidden" id="servis-status-kondisi" value="Minta Servis">
+    <div class="flex bg-haleyora-dark border border-haleyora-blue/50 rounded-xl overflow-hidden text-xs font-bold">
+        <button type="button" id="btn-status-minta" onclick="setStatusServisForm('Minta Servis')" class="flex-1 px-3.5 py-2.5 bg-haleyora-blue text-white transition">Minta Servis</button>
+        <button type="button" id="btn-status-selesai" onclick="setStatusServisForm('Servis Selesai')" class="flex-1 px-3.5 py-2.5 text-slate-300 transition">Servis Selesai</button>
+    </div>
+</div>
+<div>
+    <label class="block font-semibold text-slate-300 mb-2">Foto Kerusakan (Opsional)</label>
                                 <div class="border-2 border-dashed border-haleyora-sky/40 rounded-2xl p-4 bg-haleyora-dark/80 text-center space-y-3">
                                     <div class="flex justify-center gap-2 mb-2">
                                         <button type="button" onclick="setCameraFacing('servis', 'environment')" class="bg-haleyora-blue/60 hover:bg-haleyora-blue text-white text-[11px] font-bold px-3 py-1 rounded-lg transition">Kamera Belakang</button>
@@ -3265,16 +3277,26 @@ rounded-xl font-bold transition">Batal</button>
             }
         }
 
+        function setStatusServisForm(nilai) {
+            document.getElementById('servis-status-kondisi').value = nilai;
+            document.getElementById('btn-status-minta').className = 'flex-1 px-3.5 py-2.5 transition ' + (nilai === 'Minta Servis' ? 'bg-haleyora-blue text-white' : 'text-slate-300');
+            document.getElementById('btn-status-selesai').className = 'flex-1 px-3.5 py-2.5 transition ' + (nilai === 'Servis Selesai' ? 'bg-haleyora-blue text-white' : 'text-slate-300');
+        }
+
         async function handleServisSubmit(event) {
             event.preventDefault();
             try {
                 const nama = document.getElementById('servis-nama').value;
+                const telepon = document.getElementById('servis-telepon').value;
                 const motor = document.getElementById('servis-motor').value;
                 const kerusakan = document.getElementById('servis-kerusakan').value;
 
                 const formData = new FormData();
                 formData.append('supir', nama);
+                formData.append('no_telepon', telepon);
                 formData.append('jenis_kendaraan', motor);
+                formData.append('no_telepon', telepon);
+                formData.append('kondisi_servis', document.getElementById('servis-status-kondisi').value);
                 formData.append('keterangan_kerusakan', kerusakan);
                 formData.append('user_id', currentUser.id);
                 formData.append('status', 'pending');
@@ -3338,6 +3360,10 @@ rounded-xl font-bold transition">Batal</button>
                                 <input type="text" id="acc-nopol" required placeholder="Contoh: BK 1234 XX" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500">
                             </div>
                             <div>
+    <label class="block font-semibold text-slate-300 mb-1">Nomor Telepon</label>
+    <input type="tel" id="servis-telepon" required placeholder="Contoh: 081234567890" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-haleyora-sky">
+</div>
+                            <div>
                                 <label class="block font-semibold text-slate-300 mb-1">Lokasi Kejadian</label>
                                 <input type="text" id="acc-lokasi" required placeholder="Masukkan lokasi tempat terjadinya insiden" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500">
                             </div>
@@ -3385,6 +3411,7 @@ rounded-xl font-bold transition">Batal</button>
             e.preventDefault();
             const formData = new FormData();
             formData.append('supir', document.getElementById('acc-supir').value);
+            formData.append('no_telepon', document.getElementById('acc-telepon').value)
             formData.append('nopol', document.getElementById('acc-nopol').value);
             formData.append('lokasi_kejadian', document.getElementById('acc-lokasi').value);
             formData.append('kronologi', document.getElementById('acc-kronologi').value);
