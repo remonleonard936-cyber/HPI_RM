@@ -1666,6 +1666,7 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                             <tr>
                                 <th class="p-3 border-b border-haleyora-blue/40">Waktu</th>
                                 <th class="p-3 border-b border-haleyora-blue/40">Nama Supir</th>
+                                <th class="p-3 border-b border-haleyora-blue/40">No HP</th>
                                 <th class="p-3 border-b border-haleyora-blue/40">Jenis Kendaraan</th>
                                 <th class="p-3 border-b border-haleyora-blue/40">Keterangan</th>
                                 <th class="p-3 border-b border-haleyora-blue/40">Foto</th>
@@ -2028,6 +2029,35 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
 
     <div id="profil-akun-modal"
         class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+        <div
+            class="bg-haleyora-card border border-haleyora-blue/40 rounded-3xl max-w-lg w-full p-6 space-y-3 text-slate-100 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-haleyora-blue/30 pb-3">
+                <h3 class="text-lg font-extrabold text-white">Detail Pengajuan Servis</h3>
+                <button onclick="document.getElementById('modal-detail-servis').classList.add('hidden')"
+                    class="text-slate-400 hover:text-white text-lg p-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="text-xs space-y-2">
+                <p><span class="text-slate-400">Waktu:</span> <span id="ds-waktu"
+                        class="text-white font-semibold"></span></p>
+                <p><span class="text-slate-400">Nama Supir:</span> <span id="ds-nama"
+                        class="text-white font-semibold"></span></p>
+                <p><span class="text-slate-400">No HP:</span> <span id="ds-telepon"
+                        class="text-white font-semibold"></span></p>
+                <p><span class="text-slate-400">Jenis Kendaraan:</span> <span id="ds-kendaraan"
+                        class="text-white font-semibold"></span></p>
+                <p><span class="text-slate-400">Status Pengajuan:</span> <span id="ds-kondisi"
+                        class="text-white font-semibold"></span></p>
+                <p><span class="text-slate-400">Status Proses:</span> <span id="ds-status"
+                        class="text-white font-semibold"></span></p>
+                <p><span class="text-slate-400">Kerusakan/Keterangan:</span></p>
+                <p id="ds-keterangan" class="text-white bg-haleyora-dark rounded-lg p-2"></p>
+                <div>
+                    <p class="text-slate-400 mb-1">Foto Kerusakan:</p>
+                    <img id="ds-foto" class="w-full max-h-64 object-contain rounded-lg hiddefloadServisReportsn">
+                    <p id="ds-foto-kosong" class="text-slate-500">Tidak ada foto.</p>
+                </div>
+            </div>
+        </div>
         <div
             class="bg-haleyora-card border border-haleyora-sky/40 rounded-3xl max-w-lg w-full p-6 space-y-6 text-slate-100 shadow-2xl my-8">
             <div class="flex justify-between items-center">
@@ -3360,7 +3390,7 @@ rounded-xl font-bold transition">Batal</button>
                             </div>
                             <div>
     <label class="block font-semibold text-slate-300 mb-1">Nomor Telepon</label>
-    <input type="tel" id="servis-telepon" required placeholder="Contoh: 081234567890" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500">
+    <input type="tel" id="acc-telepon" required placeholder="Contoh: 081234567890" class="w-full bg-haleyora-dark border border-haleyora-blue/50 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-rose-500">
 </div>
                             <div>
                                 <label class="block font-semibold text-slate-300 mb-1">Lokasi Kejadian</label>
@@ -3845,6 +3875,33 @@ rounded-xl font-bold transition">Batal</button>
             }
         }
 
+        async function bukaDetailServis(id) {
+            try {
+                const item = await pb.collection('servis').getOne(id);
+                document.getElementById('ds-waktu').textContent = new Date(item.created).toLocaleString('id-ID');
+                document.getElementById('ds-nama').textContent = item.supir || '-';
+                document.getElementById('ds-telepon').textContent = item.no_telepon || '-';
+                document.getElementById('ds-kendaraan').textContent = item.jenis_kendaraan || '-';
+                document.getElementById('ds-kondisi').textContent = item.kondisi_servis || '-';
+                document.getElementById('ds-status').textContent = item.status || 'pending';
+                document.getElementById('ds-keterangan').textContent = item.keterangan_kerusakan || '-';
+                const foto = document.getElementById('ds-foto');
+                const fotoKosong = document.getElementById('ds-foto-kosong');
+                if (item.foto_servis) {
+                    foto.src = pb.files.getURL(item, item.foto_servis);
+                    foto.classList.remove('hidden');
+                    fotoKosong.classList.add('hidden');
+                } else {
+                    foto.classList.add('hidden');
+                    fotoKosong.classList.remove('hidden');
+                }
+                document.getElementById('modal-detail-servis').classList.remove('hidden');
+            } catch (error) {
+                console.error(error);
+                notifDinamis('Gagal memuat detail servis.', 'error');
+            }
+        }
+
         async function loadServisReports() {
             const tbody = document.getElementById('servis-table-body');
             if (!tbody) return;
@@ -3852,19 +3909,21 @@ rounded-xl font-bold transition">Batal</button>
                 const filterServis = modeDataServis === 'setelah' ? 'status_setelah = "menunggu_verifikasi"' : '';
                 const records = await pb.collection('servis').getList(1, 50, { sort: '-created', filter: filterServis, requestKey: null });
                 tbody.innerHTML = records.items.length === 0
-                    ? '<tr><td colspan="7" class="text-center py-4 text-slate-400">Belum ada pengajuan servis.</td></tr>'
+                    ? '<tr><td colspan="8" class="text-center py-4 text-slate-400">Belum ada pengajuan servis.</td></tr>'
                     : '';
                 records.items.forEach(item => {
                     tbody.innerHTML += `
         <tr class="hover:bg-haleyora-blue/10">
           <td class="p-3 border-b border-haleyora-blue/20">${new Date(item.created).toLocaleString('id-ID')}</td>
           <td class="p-3 border-b border-haleyora-blue/20">${item.supir || '-'}</td>
+          <td class="p-3 border-b border-haleyora-blue/20">${item.no_telepon || '-'}</td>
           <td class="p-3 border-b border-haleyora-blue/20">${item.jenis_kendaraan || '-'}</td>
           <td class="p-3 border-b
 border-haleyora-blue/20">${item.keterangan_kerusakan ||
                         '-'}</td>
 <td class="p-3 border-b border-haleyora-blue/20">${item.foto_servis ? `<img id="foto-servis-${item.id}" class="w-14 h-14 object-cover rounded-lg">` : '-'}</td>
 <td class="p-3 border-b border-haleyora-blue/20">${item.status || 'pending'}</td>
+<button onclick="bukaDetailServis('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Detail</button>
             ${item.status === 'pending' ? `
               <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition mr-1"><i class="fa-solid fa-check"></i></button>
               <button onclick="updateStatusServis('${item.id}', 'selesai')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
@@ -3878,7 +3937,7 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
                 });
             } catch (error) {
                 console.error("Gagal memuat data servis:", error);
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-rose-400">Gagal memuat data servis.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-rose-400">Gagal memuat data servis.</td></tr>';
             }
         }
 
