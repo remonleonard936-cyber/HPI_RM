@@ -3888,7 +3888,7 @@ rounded-xl font-bold transition">Batal</button>
                 const foto = document.getElementById('ds-foto');
                 const fotoKosong = document.getElementById('ds-foto-kosong');
                 if (item.foto_servis) {
-                    foto.src = pb.files.getURL(item, item.foto_servis);
+                    foto.src = pb.files.getUrl(item, item.foto_servis);
                     foto.classList.remove('hidden');
                     fotoKosong.classList.add('hidden');
                 } else {
