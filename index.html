@@ -2027,8 +2027,8 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
         </div>
     </div>
 
-    <div id="profil-akun-modal"
-        class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+    <div id="modal-detail-servis"
+        class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
         <div
             class="bg-haleyora-card border border-haleyora-blue/40 rounded-3xl max-w-lg w-full p-6 space-y-3 text-slate-100 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-haleyora-blue/30 pb-3">
@@ -2053,11 +2053,14 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 <p id="ds-keterangan" class="text-white bg-haleyora-dark rounded-lg p-2"></p>
                 <div>
                     <p class="text-slate-400 mb-1">Foto Kerusakan:</p>
-                    <img id="ds-foto" class="w-full max-h-64 object-contain rounded-lg hiddefloadServisReportsn">
+                    <img id="ds-foto" class="w-full max-h-64 object-contain rounded-lg hidden">
                     <p id="ds-foto-kosong" class="text-slate-500">Tidak ada foto.</p>
                 </div>
             </div>
         </div>
+    </div>
+    <div id="profil-akun-modal"
+        class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
         <div
             class="bg-haleyora-card border border-haleyora-sky/40 rounded-3xl max-w-lg w-full p-6 space-y-6 text-slate-100 shadow-2xl my-8">
             <div class="flex justify-between items-center">
@@ -3877,7 +3880,9 @@ rounded-xl font-bold transition">Batal</button>
 
         async function bukaDetailServis(id) {
             try {
-                const item = await pb.collection('servis').getOne(id);
+                const item = await pb.collection('servis').getOne(id, {
+                    fields: 'id,collectionId,collectionName,created,supir,no_telepon,jenis_kendaraan,kondisi_servis,status,keterangan_kerusakan,foto_servis'
+                });
                 document.getElementById('ds-waktu').textContent = new Date(item.created).toLocaleString('id-ID');
                 document.getElementById('ds-nama').textContent = item.supir || '-';
                 document.getElementById('ds-telepon').textContent = item.no_telepon || '-';
@@ -3923,7 +3928,9 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
                         '-'}</td>
 <td class="p-3 border-b border-haleyora-blue/20">${item.foto_servis ? `<img id="foto-servis-${item.id}" class="w-14 h-14 object-cover rounded-lg">` : '-'}</td>
 <td class="p-3 border-b border-haleyora-blue/20">${item.status || 'pending'}</td>
-<button onclick="bukaDetailServis('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Detail</button>
+<td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
+  <div class="flex items-center justify-center gap-2">
+    <button onclick="bukaDetailServis('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Detail</button>
             ${item.status === 'pending' ? `
               <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition mr-1"><i class="fa-solid fa-check"></i></button>
               <button onclick="updateStatusServis('${item.id}', 'selesai')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
@@ -3932,6 +3939,7 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
   <button onclick="terimaServisSelesai('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
 ` : ''}
 <button onclick="hapusLaporan('${item.id}', 'servis')" class="bg-slate-700 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
+  </div>
 </td>
         </tr>`;
                 });
