@@ -3941,7 +3941,13 @@ ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' 
 <button onclick="hapusLaporan('${item.id}', 'servis')" class="bg-slate-700 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition" title="Hapus"><i class="fa-solid fa-trash"></i></button>
   </div>
 </td>
-        </tr>`;
+                </tr>`;
+                });
+                records.items.forEach(item => {
+                    if (item.foto_servis) {
+                        const el = document.getElementById(`foto-servis-${item.id}`);
+                        if (el) pasangFotoAman(el, item, item.foto_servis);
+                    }
                 });
             } catch (error) {
                 console.error("Gagal memuat data servis:", error);
