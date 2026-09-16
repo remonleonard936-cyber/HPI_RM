@@ -3931,9 +3931,9 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
 <td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
   <div class="flex items-center justify-center gap-2">
     <button onclick="bukaDetailServis('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Detail</button>
-            ${item.status === 'pending' ? `
-              <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition mr-1"><i class="fa-solid fa-check"></i></button>
-              <button onclick="updateStatusServis('${item.id}', 'selesai')" class="bg-rose-600 hover:bg-rose-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
+                        ${item.status === 'pending' ? `
+              <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Setuju</button>
+              <button onclick="tolakServis('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Tidak Setuju</button>
 ` : ''}
 ${modeDataServis === 'setelah' && item.status_setelah === 'menunggu_verifikasi' ? `
   <button onclick="terimaServisSelesai('${item.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-check"></i></button>
@@ -4299,6 +4299,18 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             } catch (error) {
                 console.error("Gagal mengubah status servis:", error);
                 notifDinamis('Gagal mengubah status servis.');
+            }
+        }
+
+        async function tolakServis(id) {
+            if (!(await konfirmasiDinamis('Tolak pengajuan servis ini?'))) return;
+            try {
+                await pb.collection('servis').update(id, { status: 'ditolak' }, { requestKey: null });
+                notifDinamis('Pengajuan servis ditolak.');
+                loadServisReports();
+            } catch (error) {
+                console.error("Gagal menolak servis:", error);
+                notifDinamis('Gagal menolak pengajuan servis.', 'error');
             }
         }
 
