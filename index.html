@@ -3931,7 +3931,7 @@ border-haleyora-blue/20">${item.keterangan_kerusakan ||
 <td class="p-3 border-b border-haleyora-blue/20 text-center align-middle">
   <div class="flex items-center justify-center gap-2">
     <button onclick="bukaDetailServis('${item.id}')" class="bg-haleyora-blue hover:bg-haleyora-sky text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Detail</button>
-                        ${item.status === 'pending' ? `
+                                                ${(!item.status || item.status === 'pending') ? `
               <button onclick="updateStatusServis('${item.id}', 'diproses')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Setuju</button>
               <button onclick="tolakServis('${item.id}')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition mr-1">Tidak Setuju</button>
 ` : ''}
