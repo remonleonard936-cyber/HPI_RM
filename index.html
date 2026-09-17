@@ -3489,7 +3489,7 @@ rounded-xl font-bold transition">Batal</button>
             const mainPublic = document.getElementById('main-public-page');
             if (sectionId === 'admin-dashboard') updateAdminStats();
             if (mainPublic) mainPublic.classList.add('hidden');
-            const sections = ['login-section', 'izin-berkendara', 'user-profile', 'admin-dashboard', 'admin-verifikasi', 'admin-profile', 'form-kecelakaan-section', 'form-servis-section', 'status-izin'];
+            const sections = ['login-section', 'izin-berkendara', 'user-profile', 'admin-dashboard', 'admin-verifikasi', 'admin-profile', 'form-kecelakaan-section', 'form-servis-section', 'form-servis-selesai-section', 'status-izin'];
             sections.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('hidden');
@@ -3509,7 +3509,7 @@ rounded-xl font-bold transition">Batal</button>
         function scrollToSection(id) {
             const mainPublic = document.getElementById('main-public-page');
             if (mainPublic) mainPublic.classList.remove('hidden');
-            const sections = ['login-section', 'izin-berkendara', 'user-profile', 'admin-dashboard', 'admin-verifikasi', 'admin-profile', 'form-kecelakaan-section', 'form-servis-section', 'status-izin'];
+            const sections = ['login-section', 'izin-berkendara', 'user-profile', 'admin-dashboard', 'admin-verifikasi', 'admin-profile', 'form-kecelakaan-section', 'form-servis-section', 'form-servis-selesai-section', 'status-izin'];
             sections.forEach(secId => {
                 const el = document.getElementById(secId);
                 if (el) el.classList.add('hidden');
