@@ -1961,10 +1961,10 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     <div class="flex flex-wrap items-center justify-end gap-3 pt-3 border-t border-haleyora-blue/40">
                         <div class="flex items-center gap-1.5 mr-2">
                             <span class="text-[10px] text-slate-400 uppercase tracking-wider mr-1">Kondisi:</span>
-                            <button type="button" id="btn-kondisi-baik" onclick="setKondisiKendaraan('Baik')"
+                            <button type="button" id="btn-kondisi-baik" onclick="setKondisiKendaraan('baik')"
                                 class="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-haleyora-dark border border-haleyora-blue/40 text-slate-300">Baik</button>
                             <button type="button" id="btn-kondisi-tidak-baik"
-                                onclick="setKondisiKendaraan('Tidak Baik')"
+                                onclick="setKondisiKendaraan('tidak baik')"
                                 class="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-haleyora-dark border border-haleyora-blue/40 text-slate-300">Tidak
                                 Baik</button>
                         </div>
@@ -2501,7 +2501,6 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                     const kondisi = item.kondisi_kendaraan || '';
                     let kode = '';
                     if (kondisi === 'Baik') kode = 'B';
-                    else if (kondisi === 'Tidak Baik') kode = 'TB';
                     if (kode) dataPerKendaraan[key].perHari[tglLapor] = kode;
                     if (item.jenis_penggunaan_kendaraan === 'Mobil Pengganti') {
                         dataPerKendaraan[key].perHariMP[tglLapor] = true;
@@ -3810,7 +3809,7 @@ rounded-xl font-bold transition">Batal</button>
             }
 
             const adaYangTidakBaik = Object.values(checklistData).some(entry => entry.kondisi === 'TIDAK BAIK');
-            formData.append('kondisi_kendaraan', adaYangTidakBaik ? 'Tidak Baik' : 'Baik');
+            formData.append('kondisi_kendaraan', adaYangTidakBaik ? 'tidak baik' : 'baik');
             formData.append('checklist', JSON.stringify(checklistData));
             formData.append('user_id', currentUser.id);
 
@@ -4082,9 +4081,9 @@ rounded-xl font-bold transition">Batal</button>
                         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                     });
                     const kondisi = item.kondisi_kendaraan || '-';
-                    const kondisiClass = kondisi === 'Baik'
+                    const kondisiClass = kondisi === 'baik'
                         ? 'text-emerald-400'
-                        : (kondisi === 'Tidak Baik' ? 'text-rose-400 font-bold' : 'text-slate-400');
+                        : (kondisi === 'tidak baik' ? 'text-rose-400 font-bold' : 'text-slate-400');
                     const lokasiUser = item.expand?.user_id?.lokasi_kerja || '-';
 
                     const tr = document.createElement('tr');
@@ -4405,8 +4404,8 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
             const gayaBaikAktif = 'px-4 py-2.5 rounded-xl text-xs font-bold transition bg-emerald-600 text-white';
             const gayaTidakBaikAktif = 'px-4 py-2.5 rounded-xl text-xs font-bold transition bg-rose-600 text-white';
             const gayaNonaktif = 'px-4 py-2.5 rounded-xl text-xs font-bold transition bg-haleyora-dark border border-haleyora-blue/40 text-slate-300';
-            if (btnBaik) btnBaik.className = nilai === 'Baik' ? gayaBaikAktif : gayaNonaktif;
-            if (btnTidakBaik) btnTidakBaik.className = nilai === 'Tidak Baik' ? gayaTidakBaikAktif : gayaNonaktif;
+            if (btnBaik) btnBaik.className = nilai === 'baik' ? gayaBaikAktif : gayaNonaktif;
+            if (btnTidakBaik) btnTidakBaik.className = nilai === 'tidak baik' ? gayaTidakBaikAktif : gayaNonaktif;
         }
 
         async function tolakEditRevisi(edit1Id) {
