@@ -1297,6 +1297,28 @@ class="w-full bg-white border border-slate-400 text-slate-900 rounded-lg px-2.5 
                             </div>
                         </div>
                     </div>
+                    <!-- ===== TANDA TANGAN PENGEMUDI ===== -->
+                    <div class="no-print space-y-2 pt-4">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-bold text-slate-200">
+                                Tanda Tangan Pengemudi <span class="text-rose-400">*</span>
+                            </label>
+                            <button type="button" onclick="bersihkanTtd()"
+                                class="text-xs font-bold text-rose-400 hover:text-rose-300 transition">
+                                <i class="fa-solid fa-eraser mr-1"></i>Hapus
+                            </button>
+                        </div>
+                        <div
+                            class="relative rounded-xl border-2 border-dashed border-slate-500 bg-white overflow-hidden">
+                            <canvas id="ttd-canvas" class="block w-full"
+                                style="height:180px; touch-action:none; cursor:crosshair;"></canvas>
+                            <span id="ttd-placeholder"
+                                class="absolute inset-0 flex items-center justify-center text-slate-400 text-sm pointer-events-none">
+                                Tanda tangan di sini
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Gambar tanda tangan Anda dengan jari atau mouse.</p>
+                    </div>
                     <div class="pt-4 flex justify-end no-print">
                         <button type="submit"
                             class="bg-gradient-to-r from-haleyora-orange to-amber-500 hover:from-haleyora-orangeHover hover:to-amber-600 text-white font-bold px-8 py-3.5 rounded-xl text-xs shadow-lg shadow-haleyora-orange/25 transition active:scale-95 flex items-center space-x-2">
@@ -2673,7 +2695,8 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                 const fotoFields = [
                     ['Foto Depan', r.foto_depan], ['Foto Belakang', r.foto_belakang],
                     ['Foto Kanan', r.foto_kanan], ['Foto Kiri', r.foto_kiri],
-                    ['Foto STNK', r.foto_stnk], ['Foto KIR', r.foto_kir], ['Foto SIM', r.foto_sim]
+                    ['Foto STNK', r.foto_stnk], ['Foto KIR', r.foto_kir], ['Foto SIM', r.foto_sim],
+                    ['Tanda Tangan', r.foto_ttd]
                 ];
                 let kolomFoto = 0; // 0 = A, 2 = C (2 foto per baris)
                 let barisFotoAwal = baris;
@@ -2966,12 +2989,109 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
             return { url, options };
         };
 
+        /* ===== TANDA TANGAN (CANVAS) ===== */
+        const ttdState = { canvas: null, ctx: null, strokes: [], current: null, drawing: false };
+
+        function ttdRender() {
+            const { canvas, ctx, strokes } = ttdState;
+            if (!canvas) return;
+            const w = canvas.clientWidth, h = canvas.clientHeight;
+            if (!w || !h) return; // kanvas sedang tersembunyi
+
+            const dpr = window.devicePixelRatio || 1;
+            if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+                canvas.width = Math.round(w * dpr);
+                canvas.height = Math.round(h * dpr);
+            }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+            ctx.strokeStyle = '#0f172a';
+            ctx.fillStyle = '#0f172a';
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            strokes.forEach(s => {
+                if (s.length === 1) { // titik tunggal
+                    ctx.beginPath();
+                    ctx.arc(s[0].x * w, s[0].y * h, 1.4, 0, Math.PI * 2);
+                    ctx.fill();
+                    return;
+                }
+                ctx.beginPath();
+                s.forEach((p, i) => {
+                    const x = p.x * w, y = p.y * h;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+
+            const ph = document.getElementById('ttd-placeholder');
+            if (ph) ph.classList.toggle('hidden', strokes.length > 0);
+        }
+
+        function ttdTitik(e) {
+            const r = ttdState.canvas.getBoundingClientRect();
+            return { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+        }
+
+        function initTtd() {
+            const canvas = document.getElementById('ttd-canvas');
+            if (!canvas || ttdState.canvas) return;
+            ttdState.canvas = canvas;
+            ttdState.ctx = canvas.getContext('2d');
+
+            canvas.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                canvas.setPointerCapture(e.pointerId);
+                ttdState.drawing = true;
+                ttdState.current = [ttdTitik(e)];
+                ttdState.strokes.push(ttdState.current);
+                ttdRender();
+            });
+            canvas.addEventListener('pointermove', (e) => {
+                if (!ttdState.drawing) return;
+                ttdState.current.push(ttdTitik(e));
+                ttdRender();
+            });
+            const selesai = () => { ttdState.drawing = false; ttdState.current = null; };
+            canvas.addEventListener('pointerup', selesai);
+            canvas.addEventListener('pointercancel', selesai);
+
+            // Kanvas awalnya tersembunyi (section belum dibuka); ukur ulang saat tampil/berubah ukuran
+            new ResizeObserver(ttdRender).observe(canvas);
+            ttdRender();
+        }
+
+        function bersihkanTtd() {
+            if (!ttdState.canvas) return;
+            ttdState.strokes = [];
+            ttdState.current = null;
+            ttdRender();
+        }
+
+        function ttdKosong() {
+            return ttdState.strokes.length === 0;
+        }
+
+        function ttdKeBlob() {
+            return new Promise(resolve => ttdState.canvas.toBlob(resolve, 'image/png'));
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initTtd);
+        } else {
+            initTtd();
+        }
+
         function resetFormInspeksiState() {
             isRevisiMode = false;
             currentLaporanIdToEdit = null;
 
             const form = document.getElementById('inspection-form');
             if (form) form.reset();
+            bersihkanTtd();
 
             // Buka kunci semua input (jaga-jaga kalau sebelumnya terkunci dari sesi revisi)
             const allInputs = document.querySelectorAll(
@@ -3811,6 +3931,14 @@ rounded-xl font-bold transition">Batal</button>
             formData.append('kondisi_kendaraan', adaYangTidakBaik ? 'tidak baik' : 'baik');
             formData.append('checklist', JSON.stringify(checklistData));
             formData.append('user_id', currentUser.id);
+            // --- TANDA TANGAN ---
+            if (ttdKosong()) {
+                notifDinamis('Mohon bubuhkan tanda tangan terlebih dahulu sebelum mengirim laporan.');
+                if (tombolKirim) tombolKirim.disabled = false;
+                return;
+            }
+            const blobTtd = await ttdKeBlob();
+            formData.append('foto_ttd', blobTtd, `ttd_${Date.now()}.png`);
 
             try {
                 if (isRevisiMode) {
@@ -3841,6 +3969,7 @@ rounded-xl font-bold transition">Batal</button>
                 }
 
                 document.getElementById('inspection-form').reset();
+                bersihkanTtd();
                 showSection('status-izin');
 
             } catch (error) {
@@ -4807,8 +4936,8 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
                 const photosContainer = document.getElementById('modal-photos-container');
                 photosContainer.innerHTML = '';
-                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
-                const labelFoto = { depan: 'Foto Depan', belakang: 'Foto Belakang', kanan: 'Foto Kanan', kiri: 'Foto Kiri', stnk: 'Foto STNK', kir: 'Foto KIR', sim: 'Foto SIM' };
+                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim', 'ttd'];
+                const labelFoto = { depan: 'Foto Depan', belakang: 'Foto Belakang', kanan: 'Foto Kanan', kiri: 'Foto Kiri', stnk: 'Foto STNK', kir: 'Foto KIR', sim: 'Foto SIM', ttd: 'Tanda Tangan' };
                 let adaFoto = false;
 
                 daftarFotoId.forEach(fotoId => {
