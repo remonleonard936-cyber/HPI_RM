@@ -1963,8 +1963,14 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                             </div>
                         </div>
                         <!-- TANDA TANGAN -->
+                        <!-- TANDA TANGAN -->
                         <div
-                            class="grid grid-cols-2 gap-6 pt-4 text-center text-xs text-slate-200 border-t border-haleyora-blue/30 mt-4">
+                            class="grid grid-cols-3 gap-6 pt-4 text-center text-xs text-slate-200 border-t border-haleyora-blue/30 mt-4">
+                            <!-- Kolom baru: hanya tanda tangan pengemudi, tanpa keterangan -->
+                            <div class="flex flex-col justify-end items-center">
+                                <img id="modal-ttd-img" alt="" class="hidden h-16 max-w-full object-contain">
+                                <p class="font-bold invisible select-none">.</p>
+                            </div>
                             <div>
                                 <p class="font-semibold">Diperiksa Oleh:</p>
                                 <p class="font-bold mt-1">Petugas Layanan K3</p>
@@ -4936,8 +4942,8 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
 
                 const photosContainer = document.getElementById('modal-photos-container');
                 photosContainer.innerHTML = '';
-                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim', 'ttd'];
-                const labelFoto = { depan: 'Foto Depan', belakang: 'Foto Belakang', kanan: 'Foto Kanan', kiri: 'Foto Kiri', stnk: 'Foto STNK', kir: 'Foto KIR', sim: 'Foto SIM', ttd: 'Tanda Tangan' };
+                const daftarFotoId = ['depan', 'belakang', 'kanan', 'kiri', 'stnk', 'kir', 'sim'];
+                const labelFoto = { depan: 'Foto Depan', belakang: 'Foto Belakang', kanan: 'Foto Kanan', kiri: 'Foto Kiri', stnk: 'Foto STNK', kir: 'Foto KIR', sim: 'Foto SIM' };
                 let adaFoto = false;
 
                 daftarFotoId.forEach(fotoId => {
@@ -4957,6 +4963,17 @@ ${modeDataInspeksi === 'edit' && item.status_edit && item.status_edit !== 'menun
                 });
                 if (!adaFoto) {
                     photosContainer.innerHTML = `<p class="text-xs text-slate-500 col-span-3">Tidak ada foto terlampir.</p>`;
+                }
+
+                // Tanda tangan pengemudi di kolom tanda tangan
+                const imgTtd = document.getElementById('modal-ttd-img');
+                if (imgTtd) {
+                    imgTtd.removeAttribute('src');
+                    imgTtd.classList.add('hidden');
+                    if (r.foto_ttd) {
+                        imgTtd.classList.remove('hidden');
+                        pasangFotoAman(imgTtd, r, r.foto_ttd);
+                    }
                 }
 
                 const checklistWrapper = document.getElementById('modal-checklist-wrapper');
