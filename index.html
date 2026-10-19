@@ -1963,24 +1963,27 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
                             </div>
                         </div>
                         <!-- TANDA TANGAN -->
-                        <!-- TANDA TANGAN -->
                         <div
                             class="grid grid-cols-3 gap-6 pt-4 text-center text-xs text-slate-200 border-t border-haleyora-blue/30 mt-4">
-                            <!-- Kolom baru: hanya tanda tangan pengemudi, tanpa keterangan -->
-                            <div class="flex flex-col justify-end items-center">
-                                <img id="modal-ttd-img" alt="" class="hidden h-16 max-w-full object-contain">
+                            <!-- Dibuat oleh: tanda tangan pengemudi -->
+                            <div>
+                                <p class="font-semibold">Dibuat Oleh:</p>
+                                <p class="font-bold mt-1 invisible select-none">.</p>
+                                <div class="h-20 flex items-end justify-center">
+                                    <img id="modal-ttd-img" alt="" class="hidden max-h-20 max-w-full object-contain">
+                                </div>
                                 <p class="font-bold invisible select-none">.</p>
                             </div>
                             <div>
                                 <p class="font-semibold">Diperiksa Oleh:</p>
                                 <p class="font-bold mt-1">Petugas Layanan K3</p>
-                                <div class="h-12"></div>
+                                <div class="h-20"></div>
                                 <p class="font-bold underline">( .................................... )</p>
                             </div>
                             <div>
                                 <p class="font-semibold">Mengetahui,</p>
                                 <p class="font-bold mt-1">Manager Cabang</p>
-                                <div class="h-12"></div>
+                                <div class="h-20"></div>
                                 <p class="font-bold underline">( .................................... )</p>
                             </div>
                         </div>
@@ -3082,7 +3085,51 @@ border-haleyora-blue/40 text-slate-300 transition">Rekap 1 Bulan</button>
         }
 
         function ttdKeBlob() {
-            return new Promise(resolve => ttdState.canvas.toBlob(resolve, 'image/png'));
+            return new Promise(resolve => {
+                const { canvas, strokes } = ttdState;
+                const w = canvas.clientWidth, h = canvas.clientHeight;
+
+                // Cari area yang benar-benar berisi goresan
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                strokes.forEach(s => s.forEach(p => {
+                    minX = Math.min(minX, p.x * w); maxX = Math.max(maxX, p.x * w);
+                    minY = Math.min(minY, p.y * h); maxY = Math.max(maxY, p.y * h);
+                }));
+                const pad = 10;
+                minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+                maxX = Math.min(w, maxX + pad); maxY = Math.min(h, maxY + pad);
+                const cw = Math.max(1, maxX - minX), ch = Math.max(1, maxY - minY);
+
+                // Gambar ulang hanya area itu, beresolusi tinggi agar tetap tajam saat diperbesar
+                const skala = 3;
+                const out = document.createElement('canvas');
+                out.width = Math.round(cw * skala);
+                out.height = Math.round(ch * skala);
+                const c = out.getContext('2d');
+                c.scale(skala, skala);
+                c.fillStyle = '#ffffff';
+                c.fillRect(0, 0, cw, ch);
+                c.strokeStyle = '#0f172a';
+                c.fillStyle = '#0f172a';
+                c.lineWidth = 2.5;
+                c.lineCap = 'round';
+                c.lineJoin = 'round';
+                strokes.forEach(s => {
+                    if (s.length === 1) {
+                        c.beginPath();
+                        c.arc(s[0].x * w - minX, s[0].y * h - minY, 1.4, 0, Math.PI * 2);
+                        c.fill();
+                        return;
+                    }
+                    c.beginPath();
+                    s.forEach((p, i) => {
+                        const x = p.x * w - minX, y = p.y * h - minY;
+                        if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+                    });
+                    c.stroke();
+                });
+                out.toBlob(resolve, 'image/png');
+            });
         }
 
         if (document.readyState === 'loading') {
